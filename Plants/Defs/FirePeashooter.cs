@@ -68,6 +68,19 @@ public class FirePeashooterDefinition : CustomPlantDefinition
 [RegisterTypeInIl2Cpp]
 public class FirePeashooterBehaviorController : CustomPlantBehaviorController
 {
+    #region Variables
+
+    // Throttles the passing-pea scan in PostPlantUpdate - iterating Board's native
+    // projectile list and calling the native ConvertToFireball every single frame,
+    // for every FirePeashooter on the board, was causing visible stutter (each
+    // element access and each call crosses the IL2CPP interop boundary, which is
+    // expensive regardless of managed-side allocations). A pea takes many frames to
+    // cross one tile, so checking a few times a second instead of 60x/sec is still
+    // plenty responsive.
+    private int postUpdateTick;
+
+    #endregion
+
     #region Constructors
 
     public FirePeashooterBehaviorController(IntPtr pointer) : base(pointer)
@@ -119,6 +132,32 @@ public class FirePeashooterBehaviorController : CustomPlantBehaviorController
 
         PlayAnimation("attack");
     }
+
+    // Disabled for now - even throttled to ~6x/sec, scanning Board.m_projectiles
+    // per FirePeashooter every tick still noticeably slowed down as more were
+    // planted (each element access and each ConvertToFireball call crosses the
+    // IL2CPP interop boundary, which real native Torchwood code never pays).
+    // Re-enable once we've looked at how the real engine does this more cheaply.
+    // public override void PostPlantUpdate()
+    // {
+    //     base.PostPlantUpdate();
+    //
+    //     postUpdateTick++;
+    //     if (postUpdateTick % 10 != 0)
+    //     {
+    //         return;
+    //     }
+    //
+    //     foreach (var p in Board.m_projectiles.m_list)
+    //     {
+    //         var proj = p.mItem;
+    //         if (proj == null || proj.mRow != Plant.mRow) continue;
+    //         if (proj.mProjectileType != ProjectileType.PeashooterPea) continue;
+    //         if (Mathf.Abs(proj.mPosX - Plant.mX) > Plant.mWidth / 2f) continue;
+    //
+    //         proj.ConvertToFireball(Plant.mPlantCol);
+    //     }
+    // }
 
     #endregion
 }
