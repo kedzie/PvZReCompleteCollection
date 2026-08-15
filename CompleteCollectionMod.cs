@@ -19,6 +19,7 @@ public class CompleteCollectionMod : MelonMod
 
     public static string EgyptianAssetBundleId = "PvZCC_EgyptianAssets";
     public static string MintAssetBundleId = "PvZCC_MintAssets";
+    public static string FirepeashooterBundleId = "PvZCC_FirepeashooterAssets";
 
     #endregion
 
@@ -38,6 +39,9 @@ public class CompleteCollectionMod : MelonMod
         {
             RegistryBridge.RegisterAssetBundle(EgyptianAssetBundleId, "Mods/CompleteCollection/pvzegyptianbundle");
             RegistryBridge.RegisterAssetBundle(MintAssetBundleId, "Mods/CompleteCollection/pvzmintbundle");
+
+            RegistryBridge.RegisterAssetBundle(FirepeashooterBundleId, "Mods/CompleteCollection/pvzripfirepeashooterbundle");
+
         };
         
         CustomContentRegistry.PostInit += () =>
@@ -50,6 +54,8 @@ public class CompleteCollectionMod : MelonMod
             CustomContentRegistry.RegisterCustomPlant(ScriptableObject.CreateInstance<IcebergLettuceDefinition>());
 
             CustomContentRegistry.RegisterCustomPlant(ScriptableObject.CreateInstance<EnlightenMintDefinition>());
+
+            CustomContentRegistry.RegisterCustomPlant(ScriptableObject.CreateInstance<FirePeashooterDefinition>());
         };
     }
     
