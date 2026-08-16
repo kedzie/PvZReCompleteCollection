@@ -91,7 +91,11 @@ public class IcebergLettuceBehaviorController : CustomPlantBehaviorController
         zombies.RemoveAll(z => z.mItem.mRow != Plant.mRow && z.mItem.mZombieType != ZombieType.Boss);
         zombies.RemoveAll(z => !z.mItem.EffectedByDamage(DamageRangeFlags.Ground));
         zombies.RemoveAll(z => Math.Abs(z.mItem.mPosX - Plant.mX) > 30f);
-        zombies.Sort((a, b) => Math.Abs(a.mItem.mPosX).CompareTo(Math.Abs(b.mItem.mPosX)));
+        // Was sorting by each zombie's raw absolute board position (missing the
+        // "- Plant.mX" the filter above correctly uses), so with multiple
+        // zombies in range it could pick an arbitrary one instead of the
+        // actually-closest.
+        zombies.Sort((a, b) => Math.Abs(a.mItem.mPosX - Plant.mX).CompareTo(Math.Abs(b.mItem.mPosX - Plant.mX)));
 
         if (zombies.Any())
         {
