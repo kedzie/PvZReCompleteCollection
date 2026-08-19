@@ -2,7 +2,7 @@ using Il2CppReloaded.Gameplay;
 using MelonLoader;
 using UnityEngine;
 
-namespace PvZCompleteCollection.Plants;
+namespace PvZCompleteCollection2.Plants;
 
 // Places a ripped PvZ2 effect prefab (an effect PAM exported by PvZRipTools, e.g. Snapdragon's fire, Primal
 // Potato Mine's explosion, Aloe's heal) relative to a plant, the way PvZ2 does it: the effect's PAM origin is the

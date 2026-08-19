@@ -2,7 +2,7 @@ using HarmonyLib;
 using Il2CppReloaded.Gameplay;
 using UnityEngine;
 
-namespace PvZCompleteCollection.Plants;
+namespace PvZCompleteCollection2.Plants;
 
 // Throws a zombie in a high arc into the nearest water of a pool level (Spring Bean). A few facts about how the game
 // treats a zombie in a pool lane, read from the decompile (ISIL of Zombie.CheckForPool / SetRow):

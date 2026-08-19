@@ -1,6 +1,6 @@
 using Il2CppReloaded.Gameplay;
 
-namespace PvZCompleteCollection.Plants;
+namespace PvZCompleteCollection2.Plants;
 
 // Dr. Zomboss' rolling fire ball and ice ball are not projectiles: the boss Zombie holds the active one
 // (mBossFireball reanimation, mFireballRow, mIsFireBall = false for the ice variant) and destroys it through
