@@ -104,12 +104,22 @@ public class EndurianBehaviorController : CustomPlantBehaviorController
     // flat 20, per design call.
     private static readonly int[] TierDamage = { 10, 20, 30 };
 
-    // Real trigger rect is {mX:-25, width:50} - roughly centered on
-    // Endurian's own tile in both directions, matching the almanac card's
-    // "Touch" range: unlike Bamboo Spartan he doesn't reach out for
-    // anything, he only ever hits whatever's already standing on/against
-    // him.
-    private const float TouchRange = 35f;
+    // Real trigger rect is {mX:-25, mY:-50, mWidth:50, mHeight:60} - roughly
+    // centered on Endurian's own tile in both directions, matching the
+    // almanac card's "Touch" range: unlike Bamboo Spartan he doesn't reach
+    // out for anything, he only ever hits whatever's already standing
+    // on/against him.
+    //
+    // Checked as a genuine rect-vs-rect overlap against the zombie's own
+    // GetZombieRect() (same as native CanTargetPlant/SquishAllInSquare, and
+    // now Bamboo Spartan/Celery Stalker too) rather than a bare
+    // center-position compare - a zombie's leading edge can overlap this
+    // zone before its tracked mPosX does, which is why an earlier
+    // point-check needed live-tuned padding (25 -> 35) to reliably catch
+    // zombies that were already visibly touching him. The real 50-unit
+    // width works directly once the zombie's own width is accounted for by
+    // the overlap itself.
+    private static readonly Rect TouchRect = new Rect(-25f, -50f, 50f, 60f);
 
     private bool isAttacking = false;
     private int idleTierShown = -1;
@@ -132,12 +142,14 @@ public class EndurianBehaviorController : CustomPlantBehaviorController
 
     private Zombie FindTouchingZombie()
     {
+        var touchRect = new Rect(Plant.mX + TouchRect.x, Plant.mY + TouchRect.y, TouchRect.width, TouchRect.height);
+
         return Board.m_zombies.m_list.ToList()
             .Where(z => z.mItem != null
                         && (z.mItem.mRow == Plant.mRow || z.mItem.mZombieType == ZombieType.Boss)
                         && !z.mItem.IsDeadOrDying()
                         && z.mItem.EffectedByDamage(DamageRangeFlags.Ground)
-                        && Math.Abs(z.mItem.mPosX - Plant.mX) <= TouchRange)
+                        && touchRect.Overlaps(z.mItem.GetZombieRect()))
             .OrderBy(z => Math.Abs(z.mItem.mPosX - Plant.mX))
             .Select(z => z.mItem)
             .FirstOrDefault();

@@ -84,19 +84,21 @@ public class CelerystalkerBehaviorController : CustomPlantBehaviorController
     // in the tooltip claims that for this one.
     private const int AttackDamage = 100;
 
-    // Real RectTriggerRange is {mX:-87, mY:-50, mWidth:32, mHeight:60} - an
-    // entirely negative mX range (unlike Bamboo Spartan's forward-positive
-    // 10-160), confirmed live: he was punching right and needed to only
-    // punch left. So negative-relative-X really does mean "left" here, same
-    // as everywhere else.
+    // Real RectTriggerRange is {mX:-87, mY:-50, mWidth:32, mHeight:60} -
+    // Unity Rect convention (x/y is the corner, not a center), so this is a
+    // real rect positioned entirely to the left of and slightly below his
+    // own origin. Confirmed live: negative-relative-X really does mean
+    // "left" here (he was punching right before this got fixed), and he
+    // doesn't react to a zombie anywhere nearby, only once it's essentially
+    // in the next block over.
     //
-    // Originally treated this as a flat 0-90 band touching his own tile, but
-    // the real range never touches zero at all - it's a narrow ~32-unit band
-    // starting 55 units away and reaching to 87. Confirmed live too: in real
-    // PvZ2 he doesn't react to a zombie the instant it's anywhere nearby,
-    // only once it's essentially in the next block over.
-    private const float DetectionMinDistance = 55f;
-    private const float DetectionMaxDistance = 87f;
+    // Checked as a genuine rect-vs-rect overlap against the zombie's own
+    // GetZombieRect() (same as the native CanTargetPlant/SquishAllInSquare
+    // machinery does), not a bare center-to-center distance compare - a
+    // zombie's leading edge can overlap this zone well before its tracked
+    // mPosX does, so a naive point check was effectively narrower than the
+    // real hitbox.
+    private static readonly Rect TriggerRect = new Rect(-87f, -50f, 32f, 60f);
 
     // OnLaunchCounterTriggered fires on the plant's own ~0.5s cooldown
     // cadence (m_launchRate 50, same conversion as everywhere else in this
@@ -125,13 +127,14 @@ public class CelerystalkerBehaviorController : CustomPlantBehaviorController
 
     private Zombie FindZombieInRange()
     {
+        var triggerRect = new Rect(Plant.mX + TriggerRect.x, Plant.mY + TriggerRect.y, TriggerRect.width, TriggerRect.height);
+
         return Board.m_zombies.m_list.ToList()
             .Where(z => z.mItem != null
                         && (z.mItem.mRow == Plant.mRow || z.mItem.mZombieType == ZombieType.Boss)
                         && !z.mItem.IsDeadOrDying()
                         && z.mItem.EffectedByDamage(DamageRangeFlags.Ground)
-                        && z.mItem.mPosX - Plant.mX <= -DetectionMinDistance
-                        && z.mItem.mPosX - Plant.mX >= -DetectionMaxDistance)
+                        && triggerRect.Overlaps(z.mItem.GetZombieRect()))
             .OrderBy(z => Plant.mX - z.mItem.mPosX)
             .Select(z => z.mItem)
             .FirstOrDefault();

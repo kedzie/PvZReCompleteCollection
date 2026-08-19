@@ -117,16 +117,22 @@ public class BambooSpartanBehaviorController : CustomPlantBehaviorController
         zombies.RemoveAll(z => z.mItem.mRow != Plant.mRow && z.mItem.mZombieType != ZombieType.Boss);
         zombies.RemoveAll(z => z.mItem.IsDeadOrDying());
         zombies.RemoveAll(z => !z.mItem.EffectedByDamage(DamageRangeFlags.Ground));
-        // Real trigger rect is forward-only (mX 10 to 160, positive = toward
-        // zombies) - Bamboo Spartan only ever jabs ahead of him, never behind,
-        // unlike Bonkchoy's front-and-back punches. Zombie hitbox centers can
-        // drift a bit negative while still functionally "on my square" (seen
-        // as low as dx=-0.3), so the lower bound gets a real tolerance rather
-        // than a knife-edge zero - but not too much: -40f let him hit a
-        // Digger that had surfaced a full tile behind him, so -8f is the
-        // sweet spot between the two.
-        const float behindTolerance = -8f;
-        zombies.RemoveAll(z => z.mItem.mPosX - Plant.mX < behindTolerance || z.mItem.mPosX - Plant.mX > 160f);
+        // Real trigger rect is {mX:10, mY:-50, mWidth:150, mHeight:60} -
+        // forward-only (positive = toward zombies), matching his real jab:
+        // he only ever attacks ahead of him, never behind, unlike Bonkchoy's
+        // front-and-back punches.
+        //
+        // Checked as a genuine rect-vs-rect overlap against the zombie's own
+        // GetZombieRect() (same as the native CanTargetPlant/SquishAllInSquare
+        // machinery does) rather than a bare center-position compare - a
+        // zombie's leading edge can overlap this zone before its tracked
+        // mPosX does, which is what a plain "< 0" cutoff was missing (zombie
+        // centers seen drifting as low as dx=-0.3 while still functionally on
+        // his own tile). That's also why the real mX:10 works directly here
+        // without the -8f/-40f tolerance hacks an earlier point-check needed -
+        // the rect overlap already accounts for the zombie's own width.
+        var triggerRect = new Rect(Plant.mX + 10f, Plant.mY - 50f, 150f, 60f);
+        zombies.RemoveAll(z => !triggerRect.Overlaps(z.mItem.GetZombieRect()));
 
         if (!zombies.Any())
         {
