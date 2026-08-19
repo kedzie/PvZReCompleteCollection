@@ -1,7 +1,7 @@
 using Il2CppReloaded.Gameplay;
 using PvZReCoreLib.Content.Plants.ZombieCards;
 
-namespace PvZCompleteCollection.Plants.Defs;
+namespace PvZCompleteCollection2.Plants.Defs;
 
 // "Zombies as plant cards": each card spawns a zombie on the tile you plant it on and immediately
 // hypnotizes it (what a Hypno-shroom does), so it walks right and fights the other zombies. The
