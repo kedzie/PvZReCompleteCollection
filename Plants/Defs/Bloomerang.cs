@@ -10,7 +10,7 @@ using PvZReCoreLib.Content.Projectiles;
 using UnityEngine;
 using Type = Il2CppSystem.Type;
 
-namespace PvZCompleteCollection.Plants.Defs;
+namespace PvZCompleteCollection2.Plants.Defs;
 
 [RegisterTypeInIl2Cpp]
 public class BloomerangDefinition : CustomPlantDefinition
