@@ -2,7 +2,7 @@ using HarmonyLib;
 using Il2CppReloaded.Gameplay;
 using UnityEngine;
 
-namespace PvZCompleteCollection.Plants;
+namespace PvZCompleteCollection2.Plants;
 
 // Sweet Potato's lure: a zombie walking past in a neighbouring lane is pulled over into his lane.
 //

@@ -7,7 +7,7 @@ using PvZReCoreLib.Content.Plants;
 using PvZReCoreLib.Content.Plants.Behavior;
 using Type = Il2CppSystem.Type;
 
-namespace PvZCompleteCollection.Plants.Defs;
+namespace PvZCompleteCollection2.Plants.Defs;
 
 [RegisterTypeInIl2Cpp]
 public class StunionDefinition : CustomPlantDefinition
