@@ -114,20 +114,19 @@ public class BambooSpartanBehaviorController : CustomPlantBehaviorController
 
         var zombies = Board.m_zombies.m_list.ToList();
         zombies.RemoveAll(z => z.mItem == null);
-        zombies.RemoveAll(z => z.mItem.IsDeadOrDying());
         zombies.RemoveAll(z => z.mItem.mRow != Plant.mRow && z.mItem.mZombieType != ZombieType.Boss);
+        zombies.RemoveAll(z => z.mItem.IsDeadOrDying());
         zombies.RemoveAll(z => !z.mItem.EffectedByDamage(DamageRangeFlags.Ground));
         // Real trigger rect is forward-only (mX 10 to 160, positive = toward
         // zombies) - Bamboo Spartan only ever jabs ahead of him, never behind,
-        // unlike Bonkchoy's front-and-back punches. Gate is "< 0" not "< 10":
-        // the real rect's "mX: 10" is just the trigger zone's own local offset,
-        // not a minimum-distance gate - a zombie standing right on the same tile
-        // (difference near 0) still overlaps that zone (zombies have their own
-        // width) and must stay a valid target, or he can never fight back
-        // against one that starts adjacent/on top of him. Only strictly-behind
-        // zombies (negative difference) are excluded, keeping the attack
-        // forward-only.
-        zombies.RemoveAll(z => z.mItem.mPosX - Plant.mX < 0f || z.mItem.mPosX - Plant.mX > 160f);
+        // unlike Bonkchoy's front-and-back punches. Zombie hitbox centers can
+        // drift a bit negative while still functionally "on my square" (seen
+        // as low as dx=-0.3), so the lower bound gets a real tolerance rather
+        // than a knife-edge zero - but not too much: -40f let him hit a
+        // Digger that had surfaced a full tile behind him, so -8f is the
+        // sweet spot between the two.
+        const float behindTolerance = -8f;
+        zombies.RemoveAll(z => z.mItem.mPosX - Plant.mX < behindTolerance || z.mItem.mPosX - Plant.mX > 160f);
 
         if (!zombies.Any())
         {
@@ -137,19 +136,14 @@ public class BambooSpartanBehaviorController : CustomPlantBehaviorController
         zombies.Sort((a, b) => a.mItem.mPosX.CompareTo(b.mItem.mPosX));
         var target = zombies.First().mItem;
 
+        // Reads live health directly rather than a separately-tracked bool,
+        // so damage/animation choice can never drift out of sync with it.
         // Real base damage is 35 (shielded "spear jab"); real
-        // BattleTranceDamageMultiplier 300 means 3x (105) once the shield is
-        // broken and he's fighting unprotected.
-        int damage = hasShield ? 35 : 105;
-        DamageZombie(target, damage, 0);
-
-        // battle_trance_attack's bulk-generated transition currently returns to
-        // the default "idle" (shielded) state instead of "battle_trance_idle1" -
-        // needs rewiring in the Animator window once this plant's bundle is
-        // built. Doesn't affect the logic here since hasShield is tracked in C#,
-        // not read back from the animator's current state - only the visual
-        // return-to-idle pose is affected until that's fixed.
-        PlayAnimation(hasShield ? "attack" : "battle_trance_attack");
+        // BattleTranceDamageMultiplier 300 means 3x (105) once the shield
+        // (1400 of the 2000 combined health) is gone.
+        bool shieldBroken = Plant.mPlantHealth <= ShieldBrokenHealthThreshold;
+        DamageZombie(target, shieldBroken ? 105 : 35, 0);
+        PlayAnimation(shieldBroken ? "battle_trance_attack" : "attack");
     }
 
     public override void PostPlantUpdate()
@@ -158,9 +152,10 @@ public class BambooSpartanBehaviorController : CustomPlantBehaviorController
 
         if (hasShield && Plant.mPlantHealth <= ShieldBrokenHealthThreshold)
         {
+            // One-shot latch guarding this block from re-firing every tick
+            // once broken - OnLaunchCounterTriggered checks live health
+            // directly rather than reading this.
             hasShield = false;
-            // Same manual-rewiring note as battle_trance_attack above - this
-            // should land in "battle_trance_idle1", not the bulk default.
             PlayAnimation("battle_trance_shield_break");
         }
     }
