@@ -104,22 +104,23 @@ public class EndurianBehaviorController : CustomPlantBehaviorController
     // flat 20, per design call.
     private static readonly int[] TierDamage = { 10, 20, 30 };
 
-    // Real trigger rect is {mX:-25, mY:-50, mWidth:50, mHeight:60} - roughly
-    // centered on Endurian's own tile in both directions, matching the
-    // almanac card's "Touch" range: unlike Bamboo Spartan he doesn't reach
-    // out for anything, he only ever hits whatever's already standing
-    // on/against him.
+    // Unlike Celery Stalker (one-directional - only the "already walked
+    // past" surprise-attack zone on his LEFT), Endurian's tooltip says he
+    // "jabs back at any zombie touching him" - a plain reactive toucher that
+    // needs to react on EITHER side, since a zombie could be actively eating
+    // him from the right (standard approach in a right-to-left lane) or have
+    // already passed him and be adjacent on the left. Two side zones, each
+    // directly mirroring Celery Stalker's own real, confirmed-working
+    // TriggerRect magnitude ({mX:-87, mY:-50, mWidth:32, mHeight:60}) rather
+    // than reusing Endurian's own originally-ported, centered {mX:-25,
+    // mY:-50, mWidth:50, mHeight:60} values, which never actually caught the
+    // zombie eating him live (no reaction at all).
     //
     // Checked as a genuine rect-vs-rect overlap against the zombie's own
     // GetZombieRect() (same as native CanTargetPlant/SquishAllInSquare, and
-    // now Bamboo Spartan/Celery Stalker too) rather than a bare
-    // center-position compare - a zombie's leading edge can overlap this
-    // zone before its tracked mPosX does, which is why an earlier
-    // point-check needed live-tuned padding (25 -> 35) to reliably catch
-    // zombies that were already visibly touching him. The real 50-unit
-    // width works directly once the zombie's own width is accounted for by
-    // the overlap itself.
-    private static readonly Rect TouchRect = new Rect(-25f, -50f, 50f, 60f);
+    // Bamboo Spartan/Celery Stalker too), not a bare center-position compare.
+    private static readonly Rect TouchRectLeft = new Rect(-87f, -50f, 32f, 60f);
+    private static readonly Rect TouchRectRight = new Rect(55f, -50f, 32f, 60f);
 
     private bool isAttacking = false;
     private int idleTierShown = -1;
@@ -142,14 +143,15 @@ public class EndurianBehaviorController : CustomPlantBehaviorController
 
     private Zombie FindTouchingZombie()
     {
-        var touchRect = new Rect(Plant.mX + TouchRect.x, Plant.mY + TouchRect.y, TouchRect.width, TouchRect.height);
+        var touchRectLeft = new Rect(Plant.mX + TouchRectLeft.x, Plant.mY + TouchRectLeft.y, TouchRectLeft.width, TouchRectLeft.height);
+        var touchRectRight = new Rect(Plant.mX + TouchRectRight.x, Plant.mY + TouchRectRight.y, TouchRectRight.width, TouchRectRight.height);
 
         return Board.m_zombies.m_list.ToList()
             .Where(z => z.mItem != null
                         && (z.mItem.mRow == Plant.mRow || z.mItem.mZombieType == ZombieType.Boss)
                         && !z.mItem.IsDeadOrDying()
                         && z.mItem.EffectedByDamage(DamageRangeFlags.Ground)
-                        && touchRect.Overlaps(z.mItem.GetZombieRect()))
+                        && (touchRectLeft.Overlaps(z.mItem.GetZombieRect()) || touchRectRight.Overlaps(z.mItem.GetZombieRect())))
             .OrderBy(z => Math.Abs(z.mItem.mPosX - Plant.mX))
             .Select(z => z.mItem)
             .FirstOrDefault();
