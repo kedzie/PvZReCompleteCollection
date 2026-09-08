@@ -5,7 +5,7 @@ using PvZReCoreLib.Content;
 using PvZReCoreLib.Util;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(CompleteCollectionMod), "Pvz Complete Collection2", "1.8", "Kedzie")]
+[assembly: MelonInfo(typeof(CompleteCollectionMod), "Pvz Complete Collection2", "1.10", "Kedzie")]
 [assembly: MelonGame("PopCap Games", "PvZ Replanted")]
 [assembly: MelonAdditionalDependencies(new [] { "PvZReCoreLib" })]
 
