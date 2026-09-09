@@ -79,6 +79,19 @@ public class FirePeashooterBehaviorController : CustomPlantBehaviorController
     // plenty responsive.
     private int postUpdateTick;
 
+    // SpawnProjectile() spawns strictly at (Plant.mX, Plant.mY) with no vertical
+    // correction - a real PeashooterPea's mouth-height look comes from an offset
+    // baked into vanilla Peashooter's own sprite/prefab, tuned for vanilla's
+    // proportions, not this ripped PvZ2 sprite's. Bloomerang doesn't hit this
+    // (checked its full source - it spawns the exact same way, no position
+    // tweaking at all) because its own custom projectile skin controls its own
+    // visual offset independently of Plant.mY. Since FirePeashooter fires a real
+    // native PeashooterPea (not a custom projectile definition), we don't get a
+    // prefab offset to tune - this constant is the one lever available, a
+    // one-time nudge applied right after spawn. Start here and adjust sign/
+    // magnitude by eye in-game.
+    private const float MouthHeightOffset = 23f;
+
     #endregion
 
     #region Constructors
@@ -118,6 +131,9 @@ public class FirePeashooterBehaviorController : CustomPlantBehaviorController
         // which is never -1, so it always converts; use Plant.mPlantCol here too.
         var m_currentTarget = zombies.First().mItem;
         var projectile = SpawnProjectile(ProjectileType.PeashooterPea);
+        // + not -: this engine's Y increases downward on screen (confirmed
+        // in-game - the original -= moved it up, the opposite of intended).
+        projectile.mPosY += MouthHeightOffset;
         projectile.mTargetZombieID = m_currentTarget.mRelatedZombieID;
         // The real Plant.Fire() always sets this right after spawning (via
         // Plant.GetDamageRangeFlags()) - native CheckForCollision() checks
