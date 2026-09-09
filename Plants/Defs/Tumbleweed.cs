@@ -2,11 +2,13 @@ using Il2CppInterop.Runtime;
 using Il2CppReloaded.Data;
 using Il2CppReloaded.Gameplay;
 using MelonLoader;
+using PvZReCoreLib.Content.Common.Behavior;
 using PvZReCoreLib.Content.Common.Skins.SkinDataTypes.Subtypes.Plant;
 using PvZReCoreLib.Content.Common.Skins.SkinDataTypes.Subtypes.Projectile;
 using PvZReCoreLib.Content.Plants;
 using PvZReCoreLib.Content.Plants.Behavior;
 using PvZReCoreLib.Content.Projectiles;
+using PvZReCoreLib.Util;
 using UnityEngine;
 using Type = Il2CppSystem.Type;
 
@@ -65,6 +67,18 @@ public class TumbleweedBehaviorController : CustomPlantBehaviorController
 
     private bool hasFired;
 
+    // Same story as FirePeashooter's MouthHeightOffset - SpawnProjectile()
+    // spawns at Plant.mY with no vertical correction, and this engine's Y
+    // increases downward on screen, so a positive offset here is what
+    // actually moves the tumbleweed down toward ground level. First-pass
+    // guess, tune by eye in-game.
+    private const float LaunchYOffset = 60f;
+
+    // Native Straight motion's default speed reads like it was tuned for a
+    // small pea, not a rolling tumbleweed - overriding mVelX once at spawn
+    // to something slower. First-pass guess.
+    private const float ProjectileSpeed = 150f;
+
     #endregion
 
     #region Constructors
@@ -94,7 +108,9 @@ public class TumbleweedBehaviorController : CustomPlantBehaviorController
             hasFired = true;
 
             PlayAnimation("idle2_1");
-            SpawnProjectile(TumbleweedProjectileDefinition.TumbleweedProjectileType);
+            var projectile = SpawnProjectile(TumbleweedProjectileDefinition.TumbleweedProjectileType);
+            projectile.mPosY += LaunchYOffset;
+            projectile.mVelX = ProjectileSpeed;
             Plant.Die();
 
             return false;
@@ -120,6 +136,11 @@ public class TumbleweedProjectileDefinition : CustomProjectileDefinition
 
     public static ProjectileType TumbleweedProjectileType;
 
+    // Loaded once here and instantiated fresh per hit by
+    // TumbleweedProjectileBehaviorController.PreDoImpact - cheaper than
+    // re-loading from the asset bundle on every impact.
+    public GameObject HitEffectPrefab;
+
     #endregion
 
     #region Constructors
@@ -131,12 +152,23 @@ public class TumbleweedProjectileDefinition : CustomProjectileDefinition
         m_damage = 20;
         m_motionType = ProjectileMotion.Straight;
         SetDamageRangeFlags(DamageRangeFlags.Ground);
+        SetHitSfx(CompleteCollectionMod.TumbleweedBundleId, "assets/plantrip/tumbleweed/sounds/168329485.ogg");
+
+        RegistryBridge.LoadAssetFromAssetBundle<GameObject>(
+            CompleteCollectionMod.TumbleweedBundleId,
+            "assets/plantrip/tumbleweed/models/default/projectile_hit/projectile_hit.prefab",
+            prefab => HitEffectPrefab = prefab);
 
         RegisterSkin(new SpriteRendererProjectileSkin()
         {
             skinId = "TumbleweedProjectile_Default",
             AssetBundleId = CompleteCollectionMod.TumbleweedBundleId,
             SkinPrefabId = "assets/plantrip/tumbleweed/models/default/projectile/projectile.prefab",
+            // Raw sprite pixel dimensions for the projectile's frames (~150px)
+            // are already comparable to the plant's own (~124px) at 1x each,
+            // so no real scale mismatch to compensate for - 1x looked a
+            // touch small in-game, 1.5x is the current best guess.
+            ScaleOverride = new Vector3(1.5f, 1.5f, 1f),
         });
     }
 
@@ -169,16 +201,22 @@ public class TumbleweedProjectileBehaviorController : CustomProjectileBehaviorCo
     // hop rather than a snap.
     private const int BounceTicks = 20;
 
+    // Approximate world-unit width of one lawn column - no clean tile-width
+    // constant was found to derive this from (Board.mWidth exists but needs
+    // verifying against column count for this board type first), so this is
+    // a first-pass guess to tune in-game. Real PvZ2 Tumbleweed pushes the
+    // zombie back 2 squares on every hit.
+    private const float TileWidth = 80f;
+
+    // Separate from BounceTicks (the projectile's own hop timing) - the
+    // zombie's slide-back was riding BounceTicks before and came out too
+    // fast, so it gets its own, longer duration to tune independently.
+    private const int ZombiePushTicks = 40;
+
     private bool isBouncing;
     private int bounceDirection;
     private int bounceTicksRemaining;
     private int bounceTargetRow;
-
-    // Suppresses re-triggering PreDoImpact every tick the projectile is still
-    // overlapping the zombie it just hit - a straight native pea never needs
-    // this since it dies on its first hit, but ours deliberately doesn't.
-    private Zombie lastHitZombie;
-    private int hitCooldownTicks;
 
     #endregion
 
@@ -200,25 +238,28 @@ public class TumbleweedProjectileBehaviorController : CustomProjectileBehaviorCo
         bounceDirection = 0;
         bounceTicksRemaining = 0;
         bounceTargetRow = -1;
-        lastHitZombie = null;
-        hitCooldownTicks = 0;
     }
 
     public override bool PreDoImpact(Zombie theZombie)
     {
-        if (hitCooldownTicks > 0 && theZombie == lastHitZombie)
+        if (isBouncing)
         {
-            // Still overlapping the zombie we just bounced off of - let it
-            // pass through untouched instead of re-triggering another bounce.
+            // Still mid-transition into the next row (mRow hasn't actually
+            // changed yet) - without this, the projectile could keep
+            // colliding with and hitting OTHER zombies still in the OLD row
+            // during that window, which is exactly how it was taking out an
+            // entire row instead of one zombie before bouncing on.
             return false;
         }
 
         DamageZombie(theZombie);
+        ZombiePushBack.Push(theZombie, TileWidth * 2f, ZombiePushTicks);
+        SpawnHitEffect(theZombie);
 
-        lastHitZombie = theZombie;
-        hitCooldownTicks = BounceTicks;
-
-        int rowCount = Board.mPlantRow.Length;
+        // Board.mPlantRow.Length isn't actually the row count (it didn't
+        // clamp correctly in-game) - Board.GetNumRows() is the real,
+        // authoritative source (also handles 5 vs 6-row stages).
+        int rowCount = Board.GetNumRows();
         int currentRow = Projectile.mRow;
 
         // Random up/down, clamped at the top/bottom rows so it can't bounce
@@ -240,11 +281,6 @@ public class TumbleweedProjectileBehaviorController : CustomProjectileBehaviorCo
     {
         base.PostUpdateNormalMotion();
 
-        if (hitCooldownTicks > 0)
-        {
-            hitCooldownTicks--;
-        }
-
         if (!isBouncing)
         {
             return;
@@ -258,6 +294,18 @@ public class TumbleweedProjectileBehaviorController : CustomProjectileBehaviorCo
             Projectile.mRow = bounceTargetRow;
             isBouncing = false;
         }
+    }
+
+    private void SpawnHitEffect(Zombie theZombie)
+    {
+        var customDef = ProjectileDefinition.TryCast<TumbleweedProjectileDefinition>();
+        if (customDef?.HitEffectPrefab == null || theZombie.mController == null)
+        {
+            return;
+        }
+
+        var instance = UnityEngine.Object.Instantiate(customDef.HitEffectPrefab, theZombie.mController.gameObject.transform.position, Quaternion.identity);
+        UnityEngine.Object.Destroy(instance, 1f);
     }
 
     #endregion
