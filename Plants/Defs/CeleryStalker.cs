@@ -107,8 +107,21 @@ public class CelerystalkerBehaviorController : CustomPlantBehaviorController
     private const int RetractionDelayCalls = 6; // real RetractionDelay is 3s
     private const int UpTransitionSettleCalls = 6; // "up" clip is ~2.67s (32 frames @ 12fps)
 
-    private bool isUp = false;
-    private bool isFullyUp = false;
+    // Real PvZ2 Celery Stalker starts standing up the instant he's planted -
+    // he only retracts down afterward if nothing shows up in time, rather
+    // than starting down and rising once a threat appears. Starting these
+    // true (instead of calling PlayAnimation("up") at spawn to try to force
+    // it) sidesteps a real bug: PlayAnimation calls made this early in a
+    // plant's life don't reliably take effect (confirmed - it silently
+    // failed to visually transition, then popped/glitched later once
+    // isFullyUp flipped without ever having actually played anything). The
+    // Animator's own default state was changed to "idle" (was "idle_down")
+    // to match, so no PlayAnimation call is needed for the starting pose at
+    // all - only "down" (still triggered normally, from
+    // OnLaunchCounterTriggered, same as the already-working attack/attack_end
+    // calls) is ever needed as an actual transition.
+    private bool isUp = true;
+    private bool isFullyUp = true;
     private bool isAttacking = false;
     private int ticksSinceZombieSeen = 0;
     private int callsSinceUpTriggered = 0;
@@ -226,8 +239,8 @@ public class CelerystalkerBehaviorController : CustomPlantBehaviorController
     {
         base.Reset();
 
-        isUp = false;
-        isFullyUp = false;
+        isUp = true;
+        isFullyUp = true;
         isAttacking = false;
         ticksSinceZombieSeen = 0;
         callsSinceUpTriggered = 0;

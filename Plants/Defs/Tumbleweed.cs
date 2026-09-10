@@ -66,6 +66,33 @@ public class TumbleweedBehaviorController : CustomPlantBehaviorController
     #region Variables
 
     private bool hasFired;
+    private bool hasDied;
+    private float elapsedSeconds;
+
+    // Same class of bug as Celery Stalker's idle_down->idle fix: calling
+    // PlayAnimation this early in a plant's life (right at spawn) doesn't
+    // reliably take effect, and none of the completion-detection APIs we
+    // tried could be trusted either -
+    // AnimationController.IsAnimationPlaying reports "finished" almost
+    // immediately regardless of real clip length, raw-Animator
+    // IsCustomAnimationActive never became true for any instance, and
+    // IsCustomAnimationFinished (normalizedTime) kept reporting "not
+    // finished" for 3-4 seconds after visual playback had already ended.
+    //
+    // So attack2 (the vanish-into-light transition, launch sound baked onto
+    // it by hand in the Editor) is now the plant Animator's own default
+    // state instead - it's just showing from the instant the object exists,
+    // no PlayAnimation call needed at all. All that's left here is a flat
+    // real-time delay before firing, tuned purely by ear/eye in-game.
+    private const float LaunchDelay = 0.3f;
+
+    // Decoupled from LaunchDelay - the plant's actually invisible inside
+    // attack2's bright light well before it fires, so this just lets that
+    // light FX finish playing out before the plant object itself (and its
+    // lawn tile) actually frees up, rather than yanking it away the instant
+    // the projectile spawns. Kept short since a long-occupied tile blocks
+    // replanting there.
+    private const float DespawnDelay = 0.6f;
 
     // Same story as FirePeashooter's MouthHeightOffset - SpawnProjectile()
     // spawns at Plant.mY with no vertical correction, and this engine's Y
@@ -92,31 +119,42 @@ public class TumbleweedBehaviorController : CustomPlantBehaviorController
     #region Methods
 
     // Tumbleweed doesn't wait for a launch cycle like a normal shooter - it
-    // fires itself down the lane and dies on its very first Update tick after
-    // being placed. Firing from PrePlantUpdate (not PostInitialize) so the
-    // plant has already been fully registered onto the board for at least one
-    // frame before Die() runs - safer than tearing it down mid-initialization.
-    // Returning false on the firing frame skips native Plant.Update() for this
-    // now-dying plant entirely rather than letting it run against an object
-    // we just told to die.
+    // shows attack2 (its "vanishing into light, becoming the projectile"
+    // transition, launch sound baked onto it in the Editor) as its Animator
+    // default state from the moment it's planted. Firing and dying are on
+    // their own independent fixed delays rather than happening together -
+    // the projectile launches first (LaunchDelay), then the plant object
+    // itself lingers a bit longer (DespawnDelay) so attack2's light FX gets
+    // to finish before the tile frees up. Returning false the whole time
+    // skips native Plant.Update() for this plant, which never needs to do
+    // anything else in its short life anyway.
     public override bool PrePlantUpdate()
     {
         var shouldContinue = base.PrePlantUpdate();
 
-        if (!hasFired)
+        if (hasDied)
+        {
+            return shouldContinue;
+        }
+
+        elapsedSeconds += Time.deltaTime;
+
+        if (!hasFired && elapsedSeconds >= LaunchDelay)
         {
             hasFired = true;
 
-            PlayAnimation("idle2_1");
             var projectile = SpawnProjectile(TumbleweedProjectileDefinition.TumbleweedProjectileType);
             projectile.mPosY += LaunchYOffset;
             projectile.mVelX = ProjectileSpeed;
-            Plant.Die();
-
-            return false;
         }
 
-        return shouldContinue;
+        if (elapsedSeconds >= DespawnDelay)
+        {
+            hasDied = true;
+            Plant.Die();
+        }
+
+        return false;
     }
 
     public override void Reset()
@@ -124,6 +162,8 @@ public class TumbleweedBehaviorController : CustomPlantBehaviorController
         base.Reset();
 
         hasFired = false;
+        hasDied = false;
+        elapsedSeconds = 0f;
     }
 
     #endregion
@@ -168,7 +208,7 @@ public class TumbleweedProjectileDefinition : CustomProjectileDefinition
             // are already comparable to the plant's own (~124px) at 1x each,
             // so no real scale mismatch to compensate for - 1x looked a
             // touch small in-game, 1.5x is the current best guess.
-            ScaleOverride = new Vector3(1.5f, 1.5f, 1f),
+            ScaleOverride = new Vector3(1.3f, 1.3f, 1f),
         });
     }
 
@@ -213,6 +253,19 @@ public class TumbleweedProjectileBehaviorController : CustomProjectileBehaviorCo
     // fast, so it gets its own, longer duration to tune independently.
     private const int ZombiePushTicks = 40;
 
+    // Replaces the earlier per-hit TossChance roll (30%/15%/5%/0% chance to
+    // bounce after the 1st/2nd/3rd/4th+ hit) - that let a packed row of 4+
+    // zombies get fully mowed down with zero chance of ever bouncing away,
+    // which felt far too strong. Now it ALWAYS bounces after resolving a
+    // row. How many zombies that row-visit hits is its own layered roll -
+    // the one that triggered the impact is always hit (100%), then 30%
+    // chance of a 2nd, and if that lands, 15% chance of a 3rd - and any
+    // extras beyond the first are picked from a generous forward sweep:
+    // only zombies further along in the direction of travel (higher
+    // mPosX) than the one that triggered the impact, closest first, within
+    // SweepRange, never zombies already passed behind it.
+    private const float SweepRange = 120f;
+
     private bool isBouncing;
     private int bounceDirection;
     private int bounceTicksRemaining;
@@ -244,17 +297,36 @@ public class TumbleweedProjectileBehaviorController : CustomProjectileBehaviorCo
     {
         if (isBouncing)
         {
-            // Still mid-transition into the next row (mRow hasn't actually
-            // changed yet) - without this, the projectile could keep
-            // colliding with and hitting OTHER zombies still in the OLD row
-            // during that window, which is exactly how it was taking out an
-            // entire row instead of one zombie before bouncing on.
+            // Already swept and resolved this row's hits (or still
+            // mid-transition into the next row, mRow hasn't actually changed
+            // yet) - without this, the projectile could keep colliding with
+            // and hitting OTHER zombies still in the OLD row during that
+            // window, on top of whatever the sweep already caught.
             return false;
         }
 
+        // theZombie already passed the native engine's own targeting checks
+        // to trigger this call at all, so it's hit unconditionally here
+        // rather than being re-validated against FindZombiesToHit's own
+        // filters (IsDeadOrDying/EffectedByDamage) - re-checking it caused a
+        // real bug where a roll of 1+ could still resolve to 0 actual hits
+        // if this exact zombie briefly failed one of those checks despite
+        // the engine already having called PreDoImpact for it.
         DamageZombie(theZombie);
         ZombiePushBack.Push(theZombie, TileWidth * 2f, ZombiePushTicks);
         SpawnHitEffect(theZombie);
+
+        int extraHits = RollHitCount() - 1;
+        if (extraHits > 0)
+        {
+            var extraZombies = FindZombiesToHit(theZombie.mRow, theZombie.mPosX, theZombie, extraHits);
+            foreach (var zombie in extraZombies)
+            {
+                DamageZombie(zombie);
+                ZombiePushBack.Push(zombie, TileWidth * 2f, ZombiePushTicks);
+                SpawnHitEffect(zombie);
+            }
+        }
 
         // Board.mPlantRow.Length isn't actually the row count (it didn't
         // clamp correctly in-game) - Board.GetNumRows() is the real,
@@ -262,9 +334,10 @@ public class TumbleweedProjectileBehaviorController : CustomProjectileBehaviorCo
         int rowCount = Board.GetNumRows();
         int currentRow = Projectile.mRow;
 
-        // Random up/down, clamped at the top/bottom rows so it can't bounce
-        // off the edge of the lawn - matches the classic bowling-ball rule of
-        // just reflecting back the only direction still available.
+        // Fully random up/down every time, no bias away from the row it just
+        // came from - real bowling doesn't seem to avoid re-visiting a lane,
+        // so this doesn't either. Only clamped at the top/bottom rows so it
+        // can't bounce off the edge of the lawn.
         int direction = UnityEngine.Random.Range(0, 2) == 0 ? -1 : 1;
         if (currentRow + direction < 0) direction = 1;
         if (currentRow + direction >= rowCount) direction = -1;
@@ -275,6 +348,47 @@ public class TumbleweedProjectileBehaviorController : CustomProjectileBehaviorCo
         bounceTargetRow = currentRow + direction;
 
         return false;
+    }
+
+    // Layered roll: the triggering zombie is always hit (100%), then 30%
+    // chance of a 2nd, and only if that lands, 15% chance of a 3rd.
+    private static int RollHitCount()
+    {
+        int count = 1;
+        if (UnityEngine.Random.value < 0.30f)
+        {
+            count = 2;
+            if (UnityEngine.Random.value < 0.15f)
+            {
+                count = 3;
+            }
+        }
+
+        return count;
+    }
+
+    // Generous forward hitbox sweep, not a tight per-zombie collision check -
+    // grabs whatever's clustered ahead of the zombie that triggered this
+    // impact (closest first, same direction the projectile is traveling) so
+    // a single row-visit can hit multiple zombies at once instead of
+    // needing repeated native collisions to do it. Zombies already passed
+    // (behind, lower mPosX) are excluded - the tumbleweed doesn't hit
+    // backward. triggerZombie itself is excluded since PreDoImpact already
+    // hits it directly - this only looks for the extras beyond it.
+    private List<Zombie> FindZombiesToHit(int row, float centerX, Zombie triggerZombie, int maxHits)
+    {
+        return Board.m_zombies.m_list.ToList()
+            .Where(z => z.mItem != null
+                        && z.mItem != triggerZombie
+                        && z.mItem.mRow == row
+                        && !z.mItem.IsDeadOrDying()
+                        && z.mItem.EffectedByDamage(DamageRangeFlags.Ground)
+                        && z.mItem.mPosX >= centerX
+                        && z.mItem.mPosX - centerX <= SweepRange)
+            .OrderBy(z => z.mItem.mPosX)
+            .Select(z => z.mItem)
+            .Take(maxHits)
+            .ToList();
     }
 
     public override void PostUpdateNormalMotion()
