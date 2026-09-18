@@ -24,6 +24,7 @@ public class CompleteCollectionMod : MelonMod
     public static string EndurianBundleId = "PvZCC_EndurianAssets";
     public static string CelerystalkerBundleId = "PvZCC_CelerystalkerAssets";
     public static string TumbleweedBundleId = "PvZCC_TumbleweedAssets";
+    public static string IceweedBundleId = "PvZCC_IceweedAssets";
 
     #endregion
 
@@ -49,6 +50,7 @@ public class CompleteCollectionMod : MelonMod
             RegistryBridge.RegisterAssetBundle(EndurianBundleId, "Mods/CompleteCollection/pvzendurianbundle");
             RegistryBridge.RegisterAssetBundle(CelerystalkerBundleId, "Mods/CompleteCollection/pvzcelerystalkerbundle");
             RegistryBridge.RegisterAssetBundle(TumbleweedBundleId, "Mods/CompleteCollection/pvztumbleweedbundle");
+            RegistryBridge.RegisterAssetBundle(IceweedBundleId, "Mods/CompleteCollection/pvziceweedbundle");
 
         };
         
@@ -73,6 +75,8 @@ public class CompleteCollectionMod : MelonMod
 
             CustomContentRegistry.RegisterCustomProjectile(ScriptableObject.CreateInstance<TumbleweedProjectileDefinition>());
             CustomContentRegistry.RegisterCustomPlant(ScriptableObject.CreateInstance<TumbleweedDefinition>());
+
+            CustomContentRegistry.RegisterCustomPlant(ScriptableObject.CreateInstance<IceweedDefinition>());
         };
     }
     

@@ -84,7 +84,7 @@ public class TumbleweedBehaviorController : CustomPlantBehaviorController
     // state instead - it's just showing from the instant the object exists,
     // no PlayAnimation call needed at all. All that's left here is a flat
     // real-time delay before firing, tuned purely by ear/eye in-game.
-    private const float LaunchDelay = 0.3f;
+    private const float LaunchDelay = 0.28f;
 
     // Decoupled from LaunchDelay - the plant's actually invisible inside
     // attack2's bright light well before it fires, so this just lets that
@@ -92,7 +92,7 @@ public class TumbleweedBehaviorController : CustomPlantBehaviorController
     // lawn tile) actually frees up, rather than yanking it away the instant
     // the projectile spawns. Kept short since a long-occupied tile blocks
     // replanting there.
-    private const float DespawnDelay = 0.6f;
+    private const float DespawnDelay = 0.5f;
 
     // Same story as FirePeashooter's MouthHeightOffset - SpawnProjectile()
     // spawns at Plant.mY with no vertical correction, and this engine's Y
@@ -313,7 +313,7 @@ public class TumbleweedProjectileBehaviorController : CustomProjectileBehaviorCo
         // if this exact zombie briefly failed one of those checks despite
         // the engine already having called PreDoImpact for it.
         DamageZombie(theZombie);
-        ZombiePushBack.Push(theZombie, TileWidth * 2f, ZombiePushTicks);
+        ZombiePushBack.Push(theZombie, Board, TileWidth * 2f, ZombiePushTicks);
         SpawnHitEffect(theZombie);
 
         int extraHits = RollHitCount() - 1;
@@ -323,7 +323,7 @@ public class TumbleweedProjectileBehaviorController : CustomProjectileBehaviorCo
             foreach (var zombie in extraZombies)
             {
                 DamageZombie(zombie);
-                ZombiePushBack.Push(zombie, TileWidth * 2f, ZombiePushTicks);
+                ZombiePushBack.Push(zombie, Board, TileWidth * 2f, ZombiePushTicks);
                 SpawnHitEffect(zombie);
             }
         }
