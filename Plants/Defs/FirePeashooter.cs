@@ -149,6 +149,34 @@ public class FirePeashooterBehaviorController : CustomPlantBehaviorController
         PlayAnimation("attack");
     }
 
+    // Dr. Zomboss' rolling ice ball is not a projectile: the boss Zombie itself holds it
+    // (mBossFireball reanimation, mFireballRow, and mIsFireBall = false for the ice variant).
+    // Jalapeno's BurnRow melts it through the boss' own BossDestroyIceballInRow, which no-ops
+    // unless the ball is actually in that row - so the plant's heat does the same for its own
+    // and the two neighbouring rows. One native GetBossZombie() lookup every 10 ticks is cheap,
+    // unlike the per-plant projectile scan disabled below.
+    public override void PostPlantUpdate()
+    {
+        base.PostPlantUpdate();
+
+        postUpdateTick++;
+        if (postUpdateTick % 10 != 0)
+        {
+            return;
+        }
+
+        var boss = Board.GetBossZombie();
+        if (boss == null || boss.mBossFireball == null || boss.mIsFireBall)
+        {
+            return;
+        }
+
+        if (Math.Abs(boss.mFireballRow - Plant.mRow) <= 1)
+        {
+            boss.BossDestroyIceballInRow(boss.mFireballRow);
+        }
+    }
+
     // Disabled for now - even throttled to ~6x/sec, scanning Board.m_projectiles
     // per FirePeashooter every tick still noticeably slowed down as more were
     // planted (each element access and each ConvertToFireball call crosses the
