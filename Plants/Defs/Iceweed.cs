@@ -76,20 +76,8 @@ public class IceweedDefinition : CustomPlantDefinition
 
         SetAlmanacBackground(CompleteCollectionMod.EgyptianAssetBundleId, "assets/almanac/backgrounds/pvz2_bg_egypt.png");
 
-        // All 11 of Iceweed's real ripped sound bites are bite/chomp variants (no dedicated
-        // "spike jab" cue exists in the rip) - loaded once here per plant TYPE, not per planted
-        // instance: CustomPlantBehaviorController's own RegisterSoundPool/mSoundPools is a
-        // per-instance dictionary meant to be populated fresh by each instance's own constructor,
-        // which would mean re-loading these from the asset bundle (an async callback) every
-        // single time a player plants another Iceweed - wasteful, and racy against the first
-        // attack tick firing before the load callback returns. Loading once into this static list
-        // and having the behavior controller play directly from it (see
-        // IceweedBehaviorController.PlayRandomBiteSound) avoids both problems.
-        foreach (var soundAsset in IceweedBehaviorController.BiteSoundAssetPaths)
-        {
-            RegistryBridge.LoadAssetFromAssetBundle<AudioClip>(CompleteCollectionMod.IceweedBundleId, soundAsset,
-                clip => IceweedBehaviorController.BiteSounds.Add(clip));
-        }
+        // No sounds are loaded or played from code: Iceweed's sounds are PlaySound Animation
+        // Events baked into its clips from the PAM (see PvZRipTools plant_sounds.py).
 
         PlantSeedType = m_seedType;
     }
@@ -137,24 +125,6 @@ public class IceweedBehaviorController : CustomPlantBehaviorController
     // PlayAnimation call is all that's needed to start it, same as an idle transition).
     private const string IdleState = "stage1_idle1";
     private const string AttackState = "stage1_attack";
-
-    // Loaded once per plant type by IceweedDefinition's constructor - see that field's own
-    // comment for why this can't be the per-instance mSoundPools/RegisterSoundPool mechanism.
-    public static readonly string[] BiteSoundAssetPaths =
-    {
-        "assets/plantrip/iceweed/sounds/134858001.ogg",
-        "assets/plantrip/iceweed/sounds/135271060.ogg",
-        "assets/plantrip/iceweed/sounds/137219562.ogg",
-        "assets/plantrip/iceweed/sounds/180532437.ogg",
-        "assets/plantrip/iceweed/sounds/383543868.ogg",
-        "assets/plantrip/iceweed/sounds/416326568.ogg",
-        "assets/plantrip/iceweed/sounds/587642561.ogg",
-        "assets/plantrip/iceweed/sounds/611417781.ogg",
-        "assets/plantrip/iceweed/sounds/660685521.ogg",
-        "assets/plantrip/iceweed/sounds/679122514.ogg",
-        "assets/plantrip/iceweed/sounds/776784313.ogg",
-    };
-    public static readonly List<AudioClip> BiteSounds = new();
 
     #endregion
 
@@ -247,15 +217,6 @@ public class IceweedBehaviorController : CustomPlantBehaviorController
             foreach (var target in targets)
             {
                 DamageZombie(target, AttackDamage, IceweedDamageFlags);
-            }
-
-            // Every sound in the rip is a bite/chomp variant with no meaningful distinction
-            // between them, so picking one at random each tick (rather than baking specific
-            // Animation Events into the clip's timeline) gives the same periodic effect for a
-            // fraction of the authoring work.
-            if (BiteSounds.Count > 0)
-            {
-                PlayAudio(BiteSounds[UnityEngine.Random.Range(0, BiteSounds.Count)]);
             }
 
             return;
