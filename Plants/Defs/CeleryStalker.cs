@@ -105,7 +105,9 @@ public class CelerystalkerBehaviorController : CustomPlantBehaviorController
     // file) - both constants below are expressed as a call count at that
     // cadence rather than raw engine ticks.
     private const int RetractionDelayCalls = 6; // real RetractionDelay is 3s
-    private const int UpTransitionSettleCalls = 6; // "up" clip is ~2.67s (32 frames @ 12fps)
+    // "up" clip is ~1.07s (32 frames @ 30fps; it was ~2.67s while the clips were imported at 12fps and
+    // this was 6). 3 calls at the ~0.43-0.5s cadence cover it.
+    private const int UpTransitionSettleCalls = 3;
 
     // Real PvZ2 Celery Stalker starts standing up the instant he's planted -
     // he only retracts down afterward if nothing shows up in time, rather
@@ -174,7 +176,7 @@ public class CelerystalkerBehaviorController : CustomPlantBehaviorController
             // Counts real elapsed ticks since "up" started regardless of
             // whether a target is still in range, since the clip itself
             // keeps playing either way - UpTransitionSettleCalls at this
-            // ~0.5s cadence covers its ~2.67s length.
+            // ~0.5s cadence covers its ~1.07s length.
             callsSinceUpTriggered++;
             if (callsSinceUpTriggered >= UpTransitionSettleCalls)
             {

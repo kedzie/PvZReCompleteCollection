@@ -244,7 +244,9 @@ public class DuskLobberProjectileBehaviorController : CustomProjectileBehaviorCo
         }
 
         var instance = UnityEngine.Object.Instantiate(customDef.HitEffectPrefab, theZombie.mController.gameObject.transform.position, Quaternion.identity);
-        UnityEngine.Object.Destroy(instance, 1f);
+        // The splash clip is 43 frames = 1.43 s at 30 fps (it was 3.6 s at 12 fps and got cut after 1 s,
+        // i.e. after its first 12 frames); keep it alive long enough to play out.
+        UnityEngine.Object.Destroy(instance, 1.5f);
     }
 
     #endregion

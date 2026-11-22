@@ -104,18 +104,31 @@ public class FirePeashooterBehaviorController : CustomPlantBehaviorController
 
     #region Methods
 
+    // Starts the attack animation when a zombie is in the lane; the pea itself leaves the mouth on the
+    // clip's own launch frame (the PAM's use_action, baked as an "ExecuteAttack" Animation Event by
+    // PvZRipTools, see OnAnimationAttackEvent). Spawning here, at the START of the clip, was fine while
+    // the clip ran at 12 fps (it restarted on every shot, so the mouth opened right as the NEXT pea
+    // appeared); at the real 30 fps the pea would appear ~0.5 s before the mouth fires.
     public override void OnLaunchCounterTriggered()
     {
         base.OnLaunchCounterTriggered();
 
-        var zombies = Board.m_zombies.m_list.ToList();
-        zombies.RemoveAll(z => z.mItem == null);
-        zombies.RemoveAll(z => z.mItem.IsDeadOrDying());
-        zombies.RemoveAll(z => z.mItem.mRow != Plant.mRow && z.mItem.mZombieType != ZombieType.Boss);
-        zombies.RemoveAll(z => !z.mItem.EffectedByDamage(DamageRangeFlags.Ground));
-        zombies.RemoveAll(z => z.mItem.mPosX <= Plant.mX);
+        if (FindTarget() == null)
+        {
+            return;
+        }
 
-        if (!zombies.Any())
+        PlayAnimation("attack");
+    }
+
+    // Frame 16 of the 31-frame "attack" clip (use_action in the PAM). Needs the pvzfirepeashooterbundle
+    // that has the ExecuteAttack event baked in - with an older bundle no pea is ever fired.
+    public override void OnAnimationAttackEvent()
+    {
+        base.OnAnimationAttackEvent();
+
+        var m_currentTarget = FindTarget();
+        if (m_currentTarget == null)
         {
             return;
         }
@@ -129,7 +142,6 @@ public class FirePeashooterBehaviorController : CustomPlantBehaviorController
         // its sentinel default, so passing -1 here matched immediately and silently
         // skipped conversion every time. Real Torchwood passes its own grid column,
         // which is never -1, so it always converts; use Plant.mPlantCol here too.
-        var m_currentTarget = zombies.First().mItem;
         var projectile = SpawnProjectile(ProjectileType.PeashooterPea);
         // + not -: this engine's Y increases downward on screen (confirmed
         // in-game - the original -= moved it up, the opposite of intended).
@@ -145,8 +157,19 @@ public class FirePeashooterBehaviorController : CustomPlantBehaviorController
         // itself before calling DamageZombie() directly.
         projectile.mDamageRangeFlags = DamageRangeFlags.Ground;
         projectile.ConvertToFireball(Plant.mPlantCol);
+    }
 
-        PlayAnimation("attack");
+    // First living zombie ahead of the plant in its lane (or any Boss), same filter the plant always used.
+    private Zombie FindTarget()
+    {
+        var zombies = Board.m_zombies.m_list.ToList();
+        zombies.RemoveAll(z => z.mItem == null);
+        zombies.RemoveAll(z => z.mItem.IsDeadOrDying());
+        zombies.RemoveAll(z => z.mItem.mRow != Plant.mRow && z.mItem.mZombieType != ZombieType.Boss);
+        zombies.RemoveAll(z => !z.mItem.EffectedByDamage(DamageRangeFlags.Ground));
+        zombies.RemoveAll(z => z.mItem.mPosX <= Plant.mX);
+
+        return zombies.Any() ? zombies.First().mItem : null;
     }
 
     // Dr. Zomboss' rolling ice ball is not a projectile: the boss Zombie itself holds it
