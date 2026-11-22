@@ -52,5 +52,6 @@ public static class ZombieCards
         // ZombieCardCatalog: Snorkel 100, Dolphin Rider 125).
         ZombieCardRegistry.Register(ZombieType.Snorkel, rechargeTime: 3500);
         ZombieCardRegistry.Register(ZombieType.DolphinRider, rechargeTime: 4000);
+        ZombieCardRegistry.Register(ZombieType.Yeti, rechargeTime: 5000);
     }
 }
