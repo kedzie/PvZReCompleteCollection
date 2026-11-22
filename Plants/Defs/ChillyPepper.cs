@@ -24,8 +24,8 @@ public class ChillyPepperDefinition : CustomPlantDefinition
         m_entryStatus = ReloadedEntryStatus.Ready;
 
         SetName("Chilly Pepper", false);
-        SetDescription("Chilly Pepper lets out a freezing blast down its whole lane, chilling every zombie in it and hurting the ones close by. The lanes next to it get a chill too.", false);
-        SetTooltip("Chills every zombie in its lane (and the next lanes), and damages the nearby ones.", false);
+        SetDescription("Chilly Pepper lets out a freezing blast down its whole lane, freezing every zombie in it and hurting the ones close by. The lanes next to it are only chilled.", false);
+        SetTooltip("Freezes every zombie in its lane, chills the next lanes, and damages the nearby ones.", false);
 
         // PvZ2 ChillyPepperDefault: Cost 125, Hitpoints 300, PacketCooldown 35, IsInstant/IsConsumable.
         // Replanted's Jalapeno costs 125 as well. PacketCooldown 35 -> m_refreshTime 3500
@@ -85,9 +85,12 @@ public class ChillyPepperBehaviorController : CustomPlantBehaviorController
     private const int LaneDamage = 200;
     private const int AdjacentLaneDamage = 100;
 
-    // The other two Actions ("row" and "row_adjacent": Damage 0, FreezeDuration/ChillDuration 1) apply
-    // to the WHOLE lane and the two next to it, no radius. Replanted's own chill (Zombie.ApplyChill(false):
-    // slow for 10 s) stands in for PvZ2's freeze/chill; DamageFlags.Freeze makes the damage chill too.
+    // The other two Actions ("row": Damage 0, FreezeDuration 1; "row_adjacent": ChillDuration 1 +
+    // FreezeDuration 1) apply to the WHOLE lane and the two next to it, no radius. The plant's own lane is
+    // frozen solid the way Replanted's Ice-shroom does it (Zombie.HitIceTrap: freeze for 4-6 s, then
+    // chilled); the neighbouring lanes only get Replanted's chill (Zombie.ApplyChill(false): slow for
+    // 10 s) - freezing three whole lanes would be a lot, and the PvZ2 numbers do not say how long
+    // "1" is. DamageFlags.Freeze makes the radius damage chill too.
     private const DamageFlags ChillDamageFlags = DamageFlags.Freeze;
 
     // Zombies are only chilled once they are on the lawn: ignore anything further right than the last
@@ -172,8 +175,15 @@ public class ChillyPepperBehaviorController : CustomPlantBehaviorController
                 continue;
             }
 
-            // The whole lane (and the next two) gets the chill ...
-            zombie.ApplyChill(false);
+            // The whole lane is frozen, the next two lanes are chilled ...
+            if (laneDistance == 0)
+            {
+                zombie.HitIceTrap();
+            }
+            else
+            {
+                zombie.ApplyChill(false);
+            }
 
             // ... and the ones within the blast radius also take the damage.
             var zombieRect = zombie.GetZombieRect();
