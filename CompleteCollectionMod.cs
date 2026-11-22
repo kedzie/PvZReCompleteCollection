@@ -31,6 +31,11 @@ public class CompleteCollectionMod : MelonMod
     public static string PeapodBundleId = "PvZCC_PeapodAssets";
     public static string PrimalSunflowerBundleId = "PvZCC_PrimalSunflowerAssets";
     public static string GoldBloomBundleId = "PvZCC_GoldBloomAssets";
+    public static string ChillyPepperBundleId = "PvZCC_ChillyPepperAssets";
+    public static string BombegranateBundleId = "PvZCC_BombegranateAssets";
+    public static string ExplodeONutBundleId = "PvZCC_ExplodeONutAssets";
+    public static string StalliaBundleId = "PvZCC_StalliaAssets";
+    public static string MegaGatlingBundleId = "PvZCC_MegaGatlingAssets";
 
     #endregion
 
@@ -63,6 +68,11 @@ public class CompleteCollectionMod : MelonMod
             RegistryBridge.RegisterAssetBundle(PeapodBundleId, "Mods/CompleteCollection/pvzpeapodbundle");
             RegistryBridge.RegisterAssetBundle(PrimalSunflowerBundleId, "Mods/CompleteCollection/pvzprimal_sunflowerbundle");
             RegistryBridge.RegisterAssetBundle(GoldBloomBundleId, "Mods/CompleteCollection/pvzgoldbloombundle");
+            RegistryBridge.RegisterAssetBundle(ChillyPepperBundleId, "Mods/CompleteCollection/pvzchillypepperbundle");
+            RegistryBridge.RegisterAssetBundle(BombegranateBundleId, "Mods/CompleteCollection/pvzbombegranatebundle");
+            RegistryBridge.RegisterAssetBundle(ExplodeONutBundleId, "Mods/CompleteCollection/pvzexplodeonutbundle");
+            RegistryBridge.RegisterAssetBundle(StalliaBundleId, "Mods/CompleteCollection/pvzstalliabundle");
+            RegistryBridge.RegisterAssetBundle(MegaGatlingBundleId, "Mods/CompleteCollection/pvzmegagatlingbundle");
 
         };
         
@@ -98,6 +108,12 @@ public class CompleteCollectionMod : MelonMod
             CustomContentRegistry.RegisterCustomPlant(ScriptableObject.CreateInstance<PeapodDefinition>());
             CustomContentRegistry.RegisterCustomPlant(ScriptableObject.CreateInstance<PrimalSunflowerDefinition>());
             CustomContentRegistry.RegisterCustomPlant(ScriptableObject.CreateInstance<GoldBloomDefinition>());
+            CustomContentRegistry.RegisterCustomPlant(ScriptableObject.CreateInstance<ChillyPepperDefinition>());
+            CustomContentRegistry.RegisterCustomPlant(ScriptableObject.CreateInstance<BombegranateDefinition>());
+            CustomContentRegistry.RegisterCustomPlant(ScriptableObject.CreateInstance<ExplodeONutDefinition>());
+            CustomContentRegistry.RegisterCustomPlant(ScriptableObject.CreateInstance<StalliaDefinition>());
+            CustomContentRegistry.RegisterCustomProjectile(ScriptableObject.CreateInstance<MegaGatlingGiantPeaDefinition>());
+            CustomContentRegistry.RegisterCustomPlant(ScriptableObject.CreateInstance<MegaGatlingDefinition>());
 
             ZombieCards.RegisterAll();
         };
