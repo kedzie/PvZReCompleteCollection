@@ -99,6 +99,7 @@ public class CompleteCollectionMod : MelonMod
             CustomContentRegistry.RegisterCustomPlant(ScriptableObject.CreateInstance<PrimalSunflowerDefinition>());
             CustomContentRegistry.RegisterCustomPlant(ScriptableObject.CreateInstance<GoldBloomDefinition>());
 
+            ZombieCards.RegisterAll();
         };
     }
     
