@@ -26,6 +26,11 @@ public class CompleteCollectionMod : MelonMod
     public static string TumbleweedBundleId = "PvZCC_TumbleweedAssets";
     public static string IceweedBundleId = "PvZCC_IceweedAssets";
     public static string DuskLobberBundleId = "PvZCC_DuskLobberAssets";
+    public static string PrimalWallnutBundleId = "PvZCC_PrimalWallnutAssets";
+    public static string PeanutBundleId = "PvZCC_PeanutAssets";
+    public static string PeapodBundleId = "PvZCC_PeapodAssets";
+    public static string PrimalSunflowerBundleId = "PvZCC_PrimalSunflowerAssets";
+    public static string GoldBloomBundleId = "PvZCC_GoldBloomAssets";
 
     #endregion
 
@@ -53,6 +58,11 @@ public class CompleteCollectionMod : MelonMod
             RegistryBridge.RegisterAssetBundle(TumbleweedBundleId, "Mods/CompleteCollection/pvztumbleweedbundle");
             RegistryBridge.RegisterAssetBundle(IceweedBundleId, "Mods/CompleteCollection/pvziceweedbundle");
             RegistryBridge.RegisterAssetBundle(DuskLobberBundleId, "Mods/CompleteCollection/pvzdusklobberbundle");
+            RegistryBridge.RegisterAssetBundle(PrimalWallnutBundleId, "Mods/CompleteCollection/pvzprimal_wallnutbundle");
+            RegistryBridge.RegisterAssetBundle(PeanutBundleId, "Mods/CompleteCollection/pvzpeanutbundle");
+            RegistryBridge.RegisterAssetBundle(PeapodBundleId, "Mods/CompleteCollection/pvzpeapodbundle");
+            RegistryBridge.RegisterAssetBundle(PrimalSunflowerBundleId, "Mods/CompleteCollection/pvzprimal_sunflowerbundle");
+            RegistryBridge.RegisterAssetBundle(GoldBloomBundleId, "Mods/CompleteCollection/pvzgoldbloombundle");
 
         };
         
@@ -82,6 +92,13 @@ public class CompleteCollectionMod : MelonMod
 
             CustomContentRegistry.RegisterCustomProjectile(ScriptableObject.CreateInstance<DuskLobberProjectileDefinition>());
             CustomContentRegistry.RegisterCustomPlant(ScriptableObject.CreateInstance<DuskLobberDefinition>());
+
+            CustomContentRegistry.RegisterCustomPlant(ScriptableObject.CreateInstance<PrimalWallnutDefinition>());
+            CustomContentRegistry.RegisterCustomPlant(ScriptableObject.CreateInstance<PeanutDefinition>());
+            CustomContentRegistry.RegisterCustomPlant(ScriptableObject.CreateInstance<PeapodDefinition>());
+            CustomContentRegistry.RegisterCustomPlant(ScriptableObject.CreateInstance<PrimalSunflowerDefinition>());
+            CustomContentRegistry.RegisterCustomPlant(ScriptableObject.CreateInstance<GoldBloomDefinition>());
+
         };
     }
     

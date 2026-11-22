@@ -30,6 +30,9 @@ public class EndurianDefinition : CustomPlantDefinition
         // PacketCooldown 15 - no shield split like Bamboo Spartan, just one
         // flat health pool with three purely-cosmetic damage-appearance
         // tiers (see BehaviorController).
+        // Nut: enemy Ladder Zombies place their ladder on it like on a Wall-nut (see CustomPlantDefinition.m_countsAsNut).
+        m_countsAsNut = true;
+
         m_seedCost = 100;
         m_versusCost = 100;
         m_health = 3000;
