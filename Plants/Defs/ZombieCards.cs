@@ -14,7 +14,9 @@ namespace PvZCompleteCollection.Plants.Defs;
 //
 // Adding a zombie is one line. The plain walkers are the ones this was designed around:
 // TrafficCone, Pail, Door, Newspaper, Football, Imp. Special-movement zombies
-// (Polevaulter, Pogo, Ladder, JackInTheBox, Dancer, Gargantuar) and Flag have card art but are untested.
+// (Polevaulter, Pogo, Ladder, JackInTheBox, Dancer) and Flag have card art but are untested.
+// A hypnotized Gargantuar smashes enemy zombies and throws its Imp forwards (CoreLib
+// HypnotizedGargantuarPatches).
 public static class ZombieCards
 {
     public static void RegisterAll()
@@ -34,8 +36,6 @@ public static class ZombieCards
         ZombieCardRegistry.Register(ZombieType.Pogo, rechargeTime: 4000);
         ZombieCardRegistry.Register(ZombieType.Dancer, rechargeTime: 4500);
         ZombieCardRegistry.Register(ZombieType.Football, rechargeTime: 5000);
-        // Off for now: a hypnotized Gargantuar from a card only smashes plants, never zombies
-        // (the native Gargantuar update only looks for plants; see the release notes).
-        // ZombieCardRegistry.Register(ZombieType.Gargantuar, rechargeTime: 8000);
+        ZombieCardRegistry.Register(ZombieType.Gargantuar, rechargeTime: 8000);
     }
 }
