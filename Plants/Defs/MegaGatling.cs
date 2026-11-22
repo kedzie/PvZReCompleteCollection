@@ -156,6 +156,12 @@ public class MegaGatlingBehaviorController : CustomPlantBehaviorController
     // Nearest living zombie ahead of the plant in its lane.
     private Zombie FindTarget()
     {
+        // The board is already gone when a last animation event fires while leaving the level.
+        if (Board?.m_zombies?.m_list == null)
+        {
+            return null;
+        }
+
         return Board.m_zombies.m_list.ToList()
             .Where(z => z.mItem != null
                         && !z.mItem.IsDeadOrDying()
