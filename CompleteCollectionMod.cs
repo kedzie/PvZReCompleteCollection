@@ -36,6 +36,11 @@ public class CompleteCollectionMod : MelonMod
     public static string ExplodeONutBundleId = "PvZCC_ExplodeONutAssets";
     public static string StalliaBundleId = "PvZCC_StalliaAssets";
     public static string MegaGatlingBundleId = "PvZCC_MegaGatlingAssets";
+    public static string PrimalPotatoMineBundleId = "PvZCC_PrimalPotatoMineAssets";
+    public static string PrimalPeashooterBundleId = "PvZCC_PrimalPeashooterAssets";
+    public static string SnapdragonBundleId = "PvZCC_SnapdragonAssets";
+    public static string AloeBundleId = "PvZCC_AloeAssets";
+    public static string SpringBeanBundleId = "PvZCC_SpringBeanAssets";
 
     #endregion
 
@@ -73,6 +78,11 @@ public class CompleteCollectionMod : MelonMod
             RegistryBridge.RegisterAssetBundle(ExplodeONutBundleId, "Mods/CompleteCollection/pvzexplodeonutbundle");
             RegistryBridge.RegisterAssetBundle(StalliaBundleId, "Mods/CompleteCollection/pvzstalliabundle");
             RegistryBridge.RegisterAssetBundle(MegaGatlingBundleId, "Mods/CompleteCollection/pvzmegagatlingbundle");
+            RegistryBridge.RegisterAssetBundle(PrimalPotatoMineBundleId, "Mods/CompleteCollection/pvzprimal_potatominebundle");
+            RegistryBridge.RegisterAssetBundle(PrimalPeashooterBundleId, "Mods/CompleteCollection/pvzprimal_peashooterbundle");
+            RegistryBridge.RegisterAssetBundle(SnapdragonBundleId, "Mods/CompleteCollection/pvzsnapdragonbundle");
+            RegistryBridge.RegisterAssetBundle(AloeBundleId, "Mods/CompleteCollection/pvzaloebundle");
+            RegistryBridge.RegisterAssetBundle(SpringBeanBundleId, "Mods/CompleteCollection/pvzspringbeanbundle");
 
         };
         
@@ -114,6 +124,13 @@ public class CompleteCollectionMod : MelonMod
             CustomContentRegistry.RegisterCustomPlant(ScriptableObject.CreateInstance<StalliaDefinition>());
             CustomContentRegistry.RegisterCustomProjectile(ScriptableObject.CreateInstance<MegaGatlingGiantPeaDefinition>());
             CustomContentRegistry.RegisterCustomPlant(ScriptableObject.CreateInstance<MegaGatlingDefinition>());
+
+            CustomContentRegistry.RegisterCustomPlant(ScriptableObject.CreateInstance<PrimalPotatoMineDefinition>());
+            CustomContentRegistry.RegisterCustomProjectile(ScriptableObject.CreateInstance<PrimalPeaProjectileDefinition>());
+            CustomContentRegistry.RegisterCustomPlant(ScriptableObject.CreateInstance<PrimalPeashooterDefinition>());
+            CustomContentRegistry.RegisterCustomPlant(ScriptableObject.CreateInstance<SnapdragonDefinition>());
+            CustomContentRegistry.RegisterCustomPlant(ScriptableObject.CreateInstance<AloeDefinition>());
+            CustomContentRegistry.RegisterCustomPlant(ScriptableObject.CreateInstance<SpringBeanDefinition>());
 
             ZombieCards.RegisterAll();
         };
