@@ -221,6 +221,7 @@ public class ChillyPepperBehaviorController : CustomPlantBehaviorController
         blasted = true;
         ChillLanes();
         QueueLaneIce();
+        BossBalls.PutOutFireBall(Board, Plant.mRow);
     }
 
     // One patch per column of the plant's lane, delayed by its distance from the plant. The world position of

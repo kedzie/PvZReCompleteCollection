@@ -162,6 +162,7 @@ public class SnapdragonBehaviorController : CustomPlantBehaviorController
         secondTileCountdown = SecondTileDelayTicks;
 
         SpawnFireArt();
+        BossBalls.MeltIceBall(Board, Plant.mRow);
     }
 
     public override void PostPlantUpdate()
