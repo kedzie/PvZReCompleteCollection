@@ -41,6 +41,11 @@ public class CompleteCollectionMod : MelonMod
     public static string SnapdragonBundleId = "PvZCC_SnapdragonAssets";
     public static string AloeBundleId = "PvZCC_AloeAssets";
     public static string SpringBeanBundleId = "PvZCC_SpringBeanAssets";
+    public static string RhubarbarianBundleId = "PvZCC_RhubarbarianAssets";
+    public static string NightshadeBundleId = "PvZCC_NightshadeAssets";
+    public static string SweetPotatoBundleId = "PvZCC_SweetPotatoAssets";
+    public static string ColdSnapdragonBundleId = "PvZCC_ColdSnapdragonAssets";
+    public static string StunionBundleId = "PvZCC_StunionAssets";
 
     #endregion
 
@@ -83,6 +88,11 @@ public class CompleteCollectionMod : MelonMod
             RegistryBridge.RegisterAssetBundle(SnapdragonBundleId, "Mods/CompleteCollection/pvzsnapdragonbundle");
             RegistryBridge.RegisterAssetBundle(AloeBundleId, "Mods/CompleteCollection/pvzaloebundle");
             RegistryBridge.RegisterAssetBundle(SpringBeanBundleId, "Mods/CompleteCollection/pvzspringbeanbundle");
+            RegistryBridge.RegisterAssetBundle(RhubarbarianBundleId, "Mods/CompleteCollection/pvzrhubarbarianbundle");
+            RegistryBridge.RegisterAssetBundle(NightshadeBundleId, "Mods/CompleteCollection/pvznightshadebundle");
+            RegistryBridge.RegisterAssetBundle(SweetPotatoBundleId, "Mods/CompleteCollection/pvzsweetpotatobundle");
+            RegistryBridge.RegisterAssetBundle(ColdSnapdragonBundleId, "Mods/CompleteCollection/pvzcold_snapdragonbundle");
+            RegistryBridge.RegisterAssetBundle(StunionBundleId, "Mods/CompleteCollection/pvzstunionbundle");
 
         };
         
@@ -131,6 +141,11 @@ public class CompleteCollectionMod : MelonMod
             CustomContentRegistry.RegisterCustomPlant(ScriptableObject.CreateInstance<SnapdragonDefinition>());
             CustomContentRegistry.RegisterCustomPlant(ScriptableObject.CreateInstance<AloeDefinition>());
             CustomContentRegistry.RegisterCustomPlant(ScriptableObject.CreateInstance<SpringBeanDefinition>());
+            CustomContentRegistry.RegisterCustomPlant(ScriptableObject.CreateInstance<RhubarbarianDefinition>());
+            CustomContentRegistry.RegisterCustomPlant(ScriptableObject.CreateInstance<NightshadeDefinition>());
+            CustomContentRegistry.RegisterCustomPlant(ScriptableObject.CreateInstance<SweetPotatoDefinition>());
+            CustomContentRegistry.RegisterCustomPlant(ScriptableObject.CreateInstance<ColdSnapdragonDefinition>());
+            CustomContentRegistry.RegisterCustomPlant(ScriptableObject.CreateInstance<StunionDefinition>());
 
             ZombieCards.RegisterAll();
         };
