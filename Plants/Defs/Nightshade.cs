@@ -17,17 +17,18 @@ public class NightshadeDefinition : CustomPlantDefinition
 
     public NightshadeDefinition(IntPtr pointer) : base(pointer)
     {
-        // Behaviour entirely from the controller (reach test, whack), like Spring Bean.
+        // Behaviour entirely from the controller (reach test, slap), like Spring Bean.
         m_subClass = PlantSubClass.Normal;
 
         m_entryStatus = ReloadedEntryStatus.Ready;
 
         SetName("Nightshade", false);
-        SetDescription($"Nightshade lashes out with its petals at zombies right in front of it - a heavy blow that hurts everything in reach. Each whack takes something out of it: after {NightshadeBehaviorController.WhackCount} whacks it is spent.", false);
-        SetTooltip($"Whacks the zombies in front of it for {NightshadeBehaviorController.WhackDamage} damage. Spent after {NightshadeBehaviorController.WhackCount} whacks (it looks more worn after each one).", false);
+        SetDescription($"Nightshade lashes out with a whirl of petals at the zombies right in front of it - a heavy blow ({NightshadeBehaviorController.SlapDamage} damage) that hurts everything in reach. It does it again and again for as long as it lives.", false);
+        SetTooltip($"Slaps the zombies in front of it for {NightshadeBehaviorController.SlapDamage} damage, again and again.", false);
 
-        // PvZ2 NightshadeDefault: Cost 75, Hitpoints 300, PacketCooldown 5, MeleeDamage 200 (its "special" action:
-        // a rect trigger x -25..+95 in front of the plant).
+        // PvZ2 NightshadeDefault: Cost 75, Hitpoints 300, PacketCooldown 5. Its melee is the "special" action, Damage 300, rect
+        // trigger {mX -25, mY -30, mWidth 120, mHeight 130} (the properties' MeleeDamage 200 is a plant stat, the action's own
+        // Damage is what is used here). PvZ2's ranged petals only fire under a Moon Flower's power, which Replanted does not have.
         // PacketCooldown 5 -> m_refreshTime 500 (~100 ticks/sec, same mapping as every other port here).
         m_seedCost = 75;
         m_versusCost = 75;
@@ -52,8 +53,8 @@ public class NightshadeDefinition : CustomPlantDefinition
 
         SetAlmanacBackground(CompleteCollectionMod.EgyptianAssetBundleId, "assets/almanac/backgrounds/pvz2_bg_egypt.png");
 
-        // No sounds are loaded or played from code: the whack sounds are PlaySound Animation Events baked into the
-        // "attack*" clips from the PAM (PvZRipTools plant_sounds.py).
+        // No sounds are loaded or played from code: the slap sounds are PlaySound Animation Events baked into the "attack"
+        // clip from the PAM (PvZRipTools plant_sounds.py).
 
         PlantSeedType = m_seedType;
     }
@@ -64,35 +65,30 @@ public class NightshadeDefinition : CustomPlantDefinition
     }
 }
 
-// Clips (30 fps). The PAM has no damage art for it; PvZRipTools make_damage_variants.py derives it (a colour grade
-// and some worn patches, wear levels 0 (as ripped) .. 3 (spent)):
-//   "idle" (loops, wear 0; the Animator default)
-//   a whack at wear level N is the clip "attack" (N = 0) / "attack_damage1" / "attack_damage2": 95 frames with one
-//   use_action marker (+40, the petals landing). The clip's art changes to wear N + 1 on the frame after that hit, and
-//   it ends in "idle_damageN+1" (loops). After the third whack (wear 3) there is no idle: the plant is removed by the
-//   OwnerDie event baked near the end of "attack_damage2".
+// The PAM's own clips, unchanged: "idle" (loops; the Animator default; "idle2" and "water" are in the bundle too, unused) and
+// "attack" (95 frames, one use_action marker at +40, the petals landing; within the clip the petals spin off and grow back).
+// The PAM has no lost-petal / damage art, so the plant looks the same after every slap.
 //
-// PvZ2 data: MeleeDamage 200, trigger rect x -25..+95 (in front of the plant). The whack starts when a zombie is in
-// that reach and hits everything in it when the marker's frame comes. Counted in game ticks, so it follows the game
-// speed.
+// PvZ2 data: the melee "special" action, Damage 300, trigger rect {mX -25, mY -30, mWidth 120, mHeight 130} around the plant's
+// origin (its centre): used here as [centre - 25, centre + 95] of the plant's own lane. The slap starts when a zombie is in
+// that reach and hits everything in it when the marker's frame comes. PvZ2's LeafRespawnCooldown 5 s is the regrowing of the
+// petals, which is what the rest of the 3.2 s clip shows; the next slap may start once the clip is over. Counted in game ticks,
+// so it follows the game speed.
 [RegisterTypeInIl2Cpp]
 public class NightshadeBehaviorController : CustomPlantBehaviorController
 {
     #region Variables
 
-    public const int WhackCount = 3;
-    public const int WhackDamage = 200;
+    public const int SlapDamage = 300;
 
-    // Reach: -25..+95 of the plant's origin in PvZ2 -> a zombie whose body overlaps this strip of his own lane.
-    private const float ReachLeft = 10f;
-    private const float ReachRight = 55f;
+    private const float ReachLeft = 25f;
+    private const float ReachRight = 95f;
 
-    // "attack" is 95 frames at 30 fps = 317 ticks; the next whack may start after that.
-    private const int WhackClipTicks = 317 + 10;
+    // "attack" is 95 frames at 30 fps = 317 ticks; the next slap may start after that.
+    private const int AttackClipTicks = 317 + 10;
     private const int CheckInterval = 5;
 
-    private int whacksDone;
-    private int ticksSinceStart = WhackClipTicks;
+    private int ticksSinceStart = AttackClipTicks;
 
     #endregion
 
@@ -110,21 +106,21 @@ public class NightshadeBehaviorController : CustomPlantBehaviorController
     {
         base.PostPlantUpdate();
 
-        if (!IsSkinApplied || whacksDone >= WhackCount)
+        if (!IsSkinApplied)
         {
             return;
         }
 
         ticksSinceStart++;
-        if (ticksSinceStart < WhackClipTicks || ticksSinceStart % CheckInterval != 0)
+        if (ticksSinceStart < AttackClipTicks || ticksSinceStart % CheckInterval != 0)
         {
             return;
         }
 
-        if (AnyZombieInReach())
+        if (ZombiesInReach().Count > 0)
         {
             ticksSinceStart = 0;
-            PlayAnimation(whacksDone == 0 ? "attack" : $"attack_damage{whacksDone}");
+            PlayAnimation("attack");
         }
     }
 
@@ -133,23 +129,15 @@ public class NightshadeBehaviorController : CustomPlantBehaviorController
     {
         base.OnAnimationAttackEvent();
 
-        if (ticksSinceStart >= WhackClipTicks || whacksDone >= WhackCount)
+        if (ticksSinceStart >= AttackClipTicks)
         {
             return;
         }
 
         foreach (var zombie in ZombiesInReach())
         {
-            zombie.TakeDamage(WhackDamage, DamageFlags.HitsShieldAndBody);
+            zombie.TakeDamage(SlapDamage, DamageFlags.HitsShieldAndBody);
         }
-
-        // The whack is used up even when nothing was left to hit: the clip's art changes wear level on this frame.
-        whacksDone++;
-    }
-
-    private bool AnyZombieInReach()
-    {
-        return ZombiesInReach().Count > 0;
     }
 
     private List<Zombie> ZombiesInReach()
@@ -161,8 +149,9 @@ public class NightshadeBehaviorController : CustomPlantBehaviorController
         }
 
         var plantRect = Plant.GetPlantRect();
-        float left = plantRect.x - ReachLeft;
-        float right = plantRect.x + plantRect.width + ReachRight;
+        float centerX = plantRect.x + plantRect.width / 2f;
+        float left = centerX - ReachLeft;
+        float right = centerX + ReachRight;
 
         foreach (var entry in Board.m_zombies.m_list.ToList())
         {
@@ -191,8 +180,7 @@ public class NightshadeBehaviorController : CustomPlantBehaviorController
     {
         base.Reset();
 
-        whacksDone = 0;
-        ticksSinceStart = WhackClipTicks;
+        ticksSinceStart = AttackClipTicks;
     }
 
     #endregion
