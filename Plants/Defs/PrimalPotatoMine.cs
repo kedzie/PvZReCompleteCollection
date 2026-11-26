@@ -47,6 +47,9 @@ public class PrimalPotatoMineDefinition : CustomPlantDefinition
         // PvZ2 family: Bombard-mint (the family of Replanted's own Cherry Bomb and Potato Mine).
         m_mintFamily = MintFamily.BombardMint;
 
+        // A mine that digs into the ground: not for a roof level's conveyor belt (see m_notOnRoof).
+        m_notOnRoof = true;
+
         SetSeedPacketImage(CompleteCollectionMod.PrimalPotatoMineBundleId, "assets/plantrip/primal_potatomine/spr_seedpacket_primal_potatomine.png");
         SetPreviewImage(CompleteCollectionMod.PrimalPotatoMineBundleId, "assets/plantrip/primal_potatomine/spr_seedpacket_primal_potatomine.png");
 

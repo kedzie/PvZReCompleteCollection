@@ -23,6 +23,9 @@ public class MegaGatlingDefinition : CustomPlantDefinition
     {
         m_subClass = PlantSubClass.Shooter;
 
+        // Shoots or rolls straight along the lane, which the roof's slope stops: not for a roof level's conveyor belt (see m_notOnRoof).
+        m_notOnRoof = true;
+
         m_entryStatus = ReloadedEntryStatus.Ready;
 
         SetName("Mega Gatling Pea", false);
