@@ -17,17 +17,17 @@ public class SweetPotatoDefinition : CustomPlantDefinition
 
     public SweetPotatoDefinition(IntPtr pointer) : base(pointer)
     {
-        // A pure wall (like Primal Wall-nut): no projectile, no action; the controller only swaps the damage pose.
+        // A wall (like Primal Wall-nut): no projectile, no action; the controller swaps the damage pose and lures.
         m_subClass = PlantSubClass.Normal;
 
         m_entryStatus = ReloadedEntryStatus.Ready;
 
         SetName("Sweet Potato", false);
-        SetDescription("Sweet Potato is a big, sturdy blocker. He sweats and bruises as zombies chew through him, through four looks from fresh to battered.", false);
-        SetTooltip("A tough wall that shows his wear as he takes damage.", false);
+        SetDescription("Sweet Potato is a big, sturdy blocker. Zombies in the lanes next to him smell him and wander over into his lane. He sweats and bruises as they chew through him.", false);
+        SetTooltip("A tough wall that lures zombies from the next lanes.", false);
 
-        // PvZ2 SweetPotatoDefault: Cost 150, Hitpoints 4000, PacketCooldown 20 (StartingCooldown 15). (PvZ2's version
-        // also lures zombies into other lanes; that part is not in this port, he is the wall only.)
+        // PvZ2 SweetPotatoDefault: Cost 150, Hitpoints 4000, PacketCooldown 20 (StartingCooldown 15). He also lures
+        // zombies from the lanes next to him into his own (SweetPotatoBehaviorController, ZombieLaneLure).
         // PacketCooldown 20 -> m_refreshTime 2000 (~100 ticks/sec, same mapping as every other port here).
         m_seedCost = 150;
         m_versusCost = 150;
@@ -75,8 +75,15 @@ public class SweetPotatoBehaviorController : CustomPlantBehaviorController
 
     private static readonly string[] TierClips = { "idle", "idle_damage", "idle_damage2", "idle_damage3" };
 
+    // PvZ2: NormalAttractRect x 0..80 on his column, the lane above and below; TimeBetweenLaneChanges 5 s
+    // (~100 ticks/sec).
+    private const float AttractWidth = 80f;
+    private const int CheckInterval = 10;
+    private const int LureCooldownTicks = 500;
+
     private int tickCounter;
     private int shownTier = -1;
+    private int lureCooldown;
 
     #endregion
 
@@ -106,9 +113,19 @@ public class SweetPotatoBehaviorController : CustomPlantBehaviorController
         base.PostPlantUpdate();
 
         tickCounter++;
-        if (tickCounter % 10 != 0)
+        if (lureCooldown > 0)
+        {
+            lureCooldown--;
+        }
+
+        if (tickCounter % CheckInterval != 0)
         {
             return;
+        }
+
+        if (lureCooldown <= 0)
+        {
+            TryLure();
         }
 
         int tier = CurrentTier;
@@ -121,12 +138,50 @@ public class SweetPotatoBehaviorController : CustomPlantBehaviorController
         PlayAnimation(TierClips[tier]);
     }
 
+    // Pull one zombie from the lane above or below into this lane when its body is over his column.
+    private void TryLure()
+    {
+        var board = Board;
+        if (board?.m_zombies?.m_list == null)
+        {
+            return;
+        }
+
+        int rows = board.GetNumRows();
+        float left = board.GridToPixelX(Plant.mPlantCol, Plant.mRow);
+        float right = left + AttractWidth;
+
+        foreach (var entry in board.m_zombies.m_list.ToList())
+        {
+            var zombie = entry.mItem;
+            if (zombie == null
+                || Math.Abs(zombie.mRow - Plant.mRow) != 1
+                || zombie.mRow < 0 || zombie.mRow >= rows
+                || !ZombieLaneLure.CanBeMoved(zombie))
+            {
+                continue;
+            }
+
+            var rect = zombie.GetZombieRect();
+            if (rect.x >= right || rect.x + rect.width <= left
+                || ZombieLaneLure.CrossesWater(board, zombie, Plant.mRow))
+            {
+                continue;
+            }
+
+            ZombieLaneLure.Start(zombie, Plant.mRow);
+            lureCooldown = LureCooldownTicks;
+            return;
+        }
+    }
+
     public override void Reset()
     {
         base.Reset();
 
         tickCounter = 0;
         shownTier = -1;
+        lureCooldown = 0;
     }
 
     #endregion
