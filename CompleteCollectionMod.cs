@@ -46,6 +46,8 @@ public class CompleteCollectionMod : MelonMod
     public static string SweetPotatoBundleId = "PvZCC_SweetPotatoAssets";
     public static string ColdSnapdragonBundleId = "PvZCC_ColdSnapdragonAssets";
     public static string StunionBundleId = "PvZCC_StunionAssets";
+    public static string SourshotBundleId = "PvZCC_SourshotAssets";
+    public static string PepperpultBundleId = "PvZCC_PepperpultAssets";
 
     #endregion
 
@@ -93,6 +95,8 @@ public class CompleteCollectionMod : MelonMod
             RegistryBridge.RegisterAssetBundle(SweetPotatoBundleId, "Mods/CompleteCollection/pvzsweetpotatobundle");
             RegistryBridge.RegisterAssetBundle(ColdSnapdragonBundleId, "Mods/CompleteCollection/pvzcold_snapdragonbundle");
             RegistryBridge.RegisterAssetBundle(StunionBundleId, "Mods/CompleteCollection/pvzstunionbundle");
+            RegistryBridge.RegisterAssetBundle(SourshotBundleId, "Mods/CompleteCollection/pvzsourshotbundle");
+            RegistryBridge.RegisterAssetBundle(PepperpultBundleId, "Mods/CompleteCollection/pvzpepperpultbundle");
 
         };
         
@@ -146,6 +150,10 @@ public class CompleteCollectionMod : MelonMod
             CustomContentRegistry.RegisterCustomPlant(ScriptableObject.CreateInstance<SweetPotatoDefinition>());
             CustomContentRegistry.RegisterCustomPlant(ScriptableObject.CreateInstance<ColdSnapdragonDefinition>());
             CustomContentRegistry.RegisterCustomPlant(ScriptableObject.CreateInstance<StunionDefinition>());
+            CustomContentRegistry.RegisterCustomProjectile(ScriptableObject.CreateInstance<SourshotProjectileDefinition>());
+            CustomContentRegistry.RegisterCustomPlant(ScriptableObject.CreateInstance<SourshotDefinition>());
+            CustomContentRegistry.RegisterCustomProjectile(ScriptableObject.CreateInstance<PepperpultProjectileDefinition>());
+            CustomContentRegistry.RegisterCustomPlant(ScriptableObject.CreateInstance<PepperpultDefinition>());
 
             ZombieCards.RegisterAll();
         };
