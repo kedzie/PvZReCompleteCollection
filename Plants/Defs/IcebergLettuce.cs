@@ -85,23 +85,35 @@ public class IcebergLettuceBehaviorController : CustomPlantBehaviorController
             return;
         }
         
-        var zombies = Board.m_zombies.m_list.ToList();
-        zombies.RemoveAll(z => z.mItem == null);
-        zombies.RemoveAll(z => z.mItem.IsDeadOrDying());
-        zombies.RemoveAll(z => z.mItem.mRow != Plant.mRow && z.mItem.mZombieType != ZombieType.Boss);
-        zombies.RemoveAll(z => !z.mItem.EffectedByDamage(DamageRangeFlags.Ground));
-        zombies.RemoveAll(z => Math.Abs(z.mItem.mPosX - Plant.mX) > 30f);
-        // Was sorting by each zombie's raw absolute board position (missing the
-        // "- Plant.mX" the filter above correctly uses), so with multiple
-        // zombies in range it could pick an arbitrary one instead of the
-        // actually-closest.
-        zombies.Sort((a, b) => Math.Abs(a.mItem.mPosX - Plant.mX).CompareTo(Math.Abs(b.mItem.mPosX - Plant.mX)));
-
-        if (zombies.Any())
+        // One pass over the shared zombie list: the actually-closest zombie within 30 (cheap tests first).
+        Zombie targetZombie = null;
+        float bestDistance = 0f;
+        foreach (var entry in ZombieSnapshot.Items(Board))
         {
-            var targetZombie = zombies[0];
-            targetZombie.mItem.HitIceTrap();
-            targetZombie.mItem.mIceTrapCounter = 1000;
+            var candidate = entry.mItem;
+            if (candidate == null
+                || (candidate.mRow != Plant.mRow && candidate.mZombieType != ZombieType.Boss))
+            {
+                continue;
+            }
+
+            float distance = Math.Abs(candidate.mPosX - Plant.mX);
+            if (distance > 30f
+                || (targetZombie != null && distance >= bestDistance)
+                || candidate.IsDeadOrDying()
+                || !candidate.EffectedByDamage(DamageRangeFlags.Ground))
+            {
+                continue;
+            }
+
+            targetZombie = candidate;
+            bestDistance = distance;
+        }
+
+        if (targetZombie != null)
+        {
+            targetZombie.HitIceTrap();
+            targetZombie.mIceTrapCounter = 1000;
             
             PlayAnimation("attack");
 

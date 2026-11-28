@@ -80,20 +80,28 @@ public class BloomerangBehaviorController : CustomPlantBehaviorController
     {
         base.OnLaunchCounterTriggered();
         
-        var zombies = Board.m_zombies.m_list.ToList();
-        zombies.RemoveAll(z => z.mItem == null);
-        zombies.RemoveAll(z => z.mItem.IsDeadOrDying());
-        zombies.RemoveAll(z => z.mItem.mRow != Plant.mRow && z.mItem.mZombieType != ZombieType.Boss);
-        zombies.RemoveAll(z => !z.mItem.EffectedByDamage(DamageRangeFlags.Ground));
-        zombies.RemoveAll(z => z.mItem.mPosX <= Plant.mX);
-        zombies.Sort((a, b) => a.mItem.mY.CompareTo(b.mItem.mY));
+        // One filtering pass over the shared zombie list (cheap tests first), then the (small) result is ordered by Y.
+        var zombies = new List<Zombie>();
+        foreach (var entry in ZombieSnapshot.Items(Board))
+        {
+            var zombie = entry.mItem;
+            if (zombie != null
+                && zombie.mPosX > Plant.mX
+                && (zombie.mRow == Plant.mRow || zombie.mZombieType == ZombieType.Boss)
+                && !zombie.IsDeadOrDying()
+                && zombie.EffectedByDamage(DamageRangeFlags.Ground))
+            {
+                zombies.Add(zombie);
+            }
+        }
 
-        if (!zombies.Any())
+        if (zombies.Count == 0)
         {
             return;
         }
-        
-        var m_currentTarget = zombies.Count > 3 ? zombies[2].mItem : zombies.Last().mItem;
+
+        zombies.Sort((a, b) => a.mY.CompareTo(b.mY));
+        var m_currentTarget = zombies.Count > 3 ? zombies[2] : zombies[zombies.Count - 1];
         
         var projectile = SpawnProjectile(BloomerangProjectileDefinition.BloomerangProjectileType);
         projectile.mTargetZombieID = m_currentTarget.mRelatedZombieID;
@@ -247,21 +255,30 @@ public class BloomerangProjectileBehaviorController : CustomProjectileBehaviorCo
 
     public Zombie FindZombieTarget()
     {
-        var zombies = Board.m_zombies.m_list.ToList();
-        zombies.RemoveAll(z => z.mItem == null);
-        zombies.RemoveAll(z => z.mItem.IsDeadOrDying());
-        zombies.RemoveAll(z => z.mItem.mRow != Projectile.mRow && z.mItem.mZombieType != ZombieType.Boss);
-        zombies.RemoveAll(z => !z.mItem.EffectedByDamage(DamageRangeFlags.Ground));
-        zombies.RemoveAll(z => z.mItem.mPosX <= Projectile.mPosX);
-        zombies.RemoveAll(z => hitZombiesForward.Contains(z.mItem) || hitZombiesBackward.Contains(z.mItem));
-        zombies.Sort((a, b) => a.mItem.mY.CompareTo(b.mItem.mY));
+        // One filtering pass over the shared zombie list (cheap tests first), then the (small) result is ordered by Y.
+        var zombies = new List<Zombie>();
+        foreach (var entry in ZombieSnapshot.Items(Board))
+        {
+            var zombie = entry.mItem;
+            if (zombie != null
+                && zombie.mPosX > Projectile.mPosX
+                && (zombie.mRow == Projectile.mRow || zombie.mZombieType == ZombieType.Boss)
+                && !hitZombiesForward.Contains(zombie)
+                && !hitZombiesBackward.Contains(zombie)
+                && !zombie.IsDeadOrDying()
+                && zombie.EffectedByDamage(DamageRangeFlags.Ground))
+            {
+                zombies.Add(zombie);
+            }
+        }
 
-        if (!zombies.Any())
+        if (zombies.Count == 0)
         {
             return null;
         }
-        
-        return zombies.Count > 3 ? zombies[2].mItem : zombies.Last().mItem;
+
+        zombies.Sort((a, b) => a.mY.CompareTo(b.mY));
+        return zombies.Count > 3 ? zombies[2] : zombies[zombies.Count - 1];
     }
 
     public override void Reset()

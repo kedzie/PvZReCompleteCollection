@@ -80,25 +80,45 @@ public class BongchoyBehaviorController : CustomPlantBehaviorController
     {
         base.OnLaunchCounterTriggered();
         
-        var zombies = Board.m_zombies.m_list.ToList();
-        zombies.RemoveAll(z => z.mItem == null);
-        zombies.RemoveAll(z => z.mItem.IsDeadOrDying());
-        zombies.RemoveAll(z => z.mItem.mRow != Plant.mRow && z.mItem.mZombieType != ZombieType.Boss);
-        zombies.RemoveAll(z => !z.mItem.EffectedByDamage(DamageRangeFlags.Ground));
-        zombies.RemoveAll(z => Math.Abs(z.mItem.mPosX - Plant.mX) > 130f);
-        
-        var frontZombies = zombies.Where(z => z.mItem.mPosX > Plant.mX).ToList();
-        frontZombies.Sort((a, b) => a.mItem.mPosX.CompareTo(b.mItem.mPosX));
-        
-        var backZombies = zombies.Where(z => z.mItem.mPosX <= Plant.mX).ToList();
-        backZombies.Sort((a, b) => b.mItem.mPosX.CompareTo(a.mItem.mPosX));
-        
-        
-        if (backZombies.Any() && (lastPunchFront || !frontZombies.Any()))
+        // One pass over the shared zombie list: the nearest zombie ahead and the nearest behind, within 130.
+        Zombie front = null;
+        Zombie back = null;
+        foreach (var entry in ZombieSnapshot.Items(Board))
         {
-            var zombie = backZombies.FirstOrDefault();
-            DamageZombie(zombie.mItem, 15, 0);
-            if (!zombie.mItem.IsDeadOrDying())
+            var candidate = entry.mItem;
+            if (candidate == null
+                || (candidate.mRow != Plant.mRow && candidate.mZombieType != ZombieType.Boss)
+                || Math.Abs(candidate.mPosX - Plant.mX) > 130f)
+            {
+                continue;
+            }
+
+            bool ahead = candidate.mPosX > Plant.mX;
+            if (ahead ? (front != null && candidate.mPosX >= front.mPosX) : (back != null && candidate.mPosX <= back.mPosX))
+            {
+                continue;
+            }
+
+            if (candidate.IsDeadOrDying() || !candidate.EffectedByDamage(DamageRangeFlags.Ground))
+            {
+                continue;
+            }
+
+            if (ahead)
+            {
+                front = candidate;
+            }
+            else
+            {
+                back = candidate;
+            }
+        }
+
+        if (back != null && (lastPunchFront || front == null))
+        {
+            var zombie = back;
+            DamageZombie(zombie, 15, 0);
+            if (!zombie.IsDeadOrDying())
             {
                 PlayAnimation("attack_left");
             }
@@ -108,11 +128,11 @@ public class BongchoyBehaviorController : CustomPlantBehaviorController
             }
             lastPunchFront = false;
         }
-        else if(frontZombies.Any())
+        else if (front != null)
         {
-            var zombie = frontZombies.FirstOrDefault();
-            DamageZombie(zombie.mItem, 15, 0);
-            if (!zombie.mItem.IsDeadOrDying())
+            var zombie = front;
+            DamageZombie(zombie, 15, 0);
+            if (!zombie.IsDeadOrDying())
             {
                 PlayAnimation("attack_right");
             }
