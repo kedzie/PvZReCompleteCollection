@@ -98,7 +98,12 @@ public class CelerystalkerBehaviorController : CustomPlantBehaviorController
     // zombie's leading edge can overlap this zone well before its tracked
     // mPosX does, so a naive point check was effectively narrower than the
     // real hitbox.
-    private static readonly Rect TriggerRect = new Rect(-87f, -50f, 32f, 60f);
+    //
+    // Widened (was {-87, -50, 32, 60}, which started 55 px away from the plant): a zombie held up by a
+    // Wall-nut in the tile next to him stands further out and was never in reach, so he never attacked.
+    // The rect now runs from 130 px to 10 px out, so it covers the next tile fully and a zombie
+    // stopped one tile further on by a blocker there.
+    private static readonly Rect TriggerRect = new Rect(-130f, -50f, 120f, 60f);
 
     // OnLaunchCounterTriggered fires on the plant's own ~0.5s cooldown
     // cadence (m_launchRate 50, same conversion as everywhere else in this
@@ -144,7 +149,7 @@ public class CelerystalkerBehaviorController : CustomPlantBehaviorController
     {
         var triggerRect = new Rect(Plant.mX + TriggerRect.x, Plant.mY + TriggerRect.y, TriggerRect.width, TriggerRect.height);
 
-        return Board.m_zombies.m_list.ToList()
+        return ZombieSnapshot.Items(Board)
             .Where(z => z.mItem != null
                         && (z.mItem.mRow == Plant.mRow || z.mItem.mZombieType == ZombieType.Boss)
                         && !z.mItem.IsDeadOrDying()

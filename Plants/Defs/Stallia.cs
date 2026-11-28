@@ -17,15 +17,15 @@ public class StalliaDefinition : CustomPlantDefinition
 
     public StalliaDefinition(IntPtr pointer) : base(pointer)
     {
-        // Instant plant, same shape as Gold Bloom: the controller starts the clip, an Animation Event
-        // on the clip does the action, another one removes the plant.
+        // Trigger plant: idles until a zombie bites it, then the controller starts the clip, an Animation
+        // Event on the clip does the action, another one removes the plant.
         m_subClass = PlantSubClass.Normal;
 
         m_entryStatus = ReloadedEntryStatus.Ready;
 
         SetName("Stallia", false);
-        SetDescription("Stallia puffs out a cloud of purple spores that leaves every zombie in a 3x3 area stuck in place for twelve seconds. They can still be hurt, they just cannot go anywhere.", false);
-        SetTooltip("Stalls every zombie in a 3x3 area for 12 seconds.", false);
+        SetDescription("When a zombie bites into her, Stallia puffs out a cloud of purple spores that leaves every zombie in a 3x3 area stuck in place for twelve seconds. They can still be hurt, they just cannot go anywhere.", false);
+        SetTooltip("Goes off when a zombie bites her: stalls every zombie in a 3x3 area for 12 seconds.", false);
 
         // PvZ2 StalliaDefault: Cost 0 (free), Hitpoints 300, PacketCooldown 20, IsInstant/IsConsumable.
         // PacketCooldown 20 -> m_refreshTime 2000 (~100 ticks/sec, same mapping as every other port here).
@@ -85,10 +85,7 @@ public class StalliaBehaviorController : CustomPlantBehaviorController
     private const int LastColumnIndex = 8;
     private const float RightEdgeSlack = 120f;
 
-    // Let the skin finish applying before asking it to play a clip.
-    private const float StartDelaySeconds = 0.1f;
-
-    // Safety net only: if the OwnerDie event never fires, remove the plant anyway.
+    // Safety net only, counted from the bite: if the OwnerDie event never fires, remove the plant anyway.
     private const float GiveUpSeconds = 12f;
 
     private float elapsed;
@@ -107,23 +104,57 @@ public class StalliaBehaviorController : CustomPlantBehaviorController
 
     #region Methods
 
+    // PvZ2: Stallia sits there like a wall and goes off the moment a zombie walks up to her to eat her.
+    // That is a zombie in her lane whose bite rect reaches her own rect (the same overlap the game
+    // uses to start a zombie eating); the first loss of health is the fallback.
     public override void Update()
     {
         base.Update();
 
-        elapsed += Time.deltaTime;
-
-        if (!started && elapsed >= StartDelaySeconds && IsSkinApplied)
+        if (!started)
         {
-            started = true;
-            PlayAnimation("attack");
+            if (IsSkinApplied && (Plant.mPlantHealth < Plant.mPlantMaxHealth || ZombieAtPlant()))
+            {
+                started = true;
+                elapsed = 0f;
+                PlayAnimation("attack");
+            }
+
+            return;
         }
+
+        elapsed += Time.deltaTime;
 
         if (elapsed >= GiveUpSeconds)
         {
             elapsed = float.MinValue;
             Plant.Die();
         }
+    }
+
+    private bool ZombieAtPlant()
+    {
+        var plantRect = Plant.GetPlantRect();
+
+        foreach (var entry in ZombieSnapshot.Items(Board))
+        {
+            var zombie = entry.mItem;
+            if (zombie == null
+                || zombie.mRow != Plant.mRow
+                || zombie.IsDeadOrDying()
+                || zombie.mMindControlled
+                || zombie.mZombieType == ZombieType.Gravestone)
+            {
+                continue;
+            }
+
+            if (zombie.mIsEating || plantRect.Overlaps(zombie.GetZombieAttackRect()))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public override void OnAnimationAttackEvent()
@@ -149,7 +180,7 @@ public class StalliaBehaviorController : CustomPlantBehaviorController
         var plantRect = Plant.GetPlantRect();
         float centerX = plantRect.x + plantRect.width / 2f;
 
-        foreach (var entry in Board.m_zombies.m_list.ToList())
+        foreach (var entry in ZombieSnapshot.Items(Board))
         {
             var zombie = entry.mItem;
             if (zombie == null

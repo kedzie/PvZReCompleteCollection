@@ -90,6 +90,12 @@ public class NightshadeBehaviorController : CustomPlantBehaviorController
 
     private int ticksSinceStart = AttackClipTicks;
 
+    // A plant never moves: its reach is worked out once, and the skin check stops once it has passed.
+    private bool skinApplied;
+    private bool reachKnown;
+    private float reachLeft;
+    private float reachRight;
+
     #endregion
 
     #region Constructors
@@ -102,22 +108,36 @@ public class NightshadeBehaviorController : CustomPlantBehaviorController
 
     #region Methods
 
+    // Many Nightshades on a lawn must stay cheap: until the next slap is due there is nothing to look at, the
+    // zombie scan is the board's shared per-frame ZombieSnapshot (read once however many plants ask), and the
+    // plant's own native calls are made once, not every tick.
     public override void PostPlantUpdate()
     {
         base.PostPlantUpdate();
 
-        if (!IsSkinApplied)
+        if (ticksSinceStart < AttackClipTicks)
         {
+            ticksSinceStart++;
             return;
+        }
+
+        if (!skinApplied)
+        {
+            if (!IsSkinApplied)
+            {
+                return;
+            }
+
+            skinApplied = true;
         }
 
         ticksSinceStart++;
-        if (ticksSinceStart < AttackClipTicks || ticksSinceStart % CheckInterval != 0)
+        if (ticksSinceStart % CheckInterval != 0)
         {
             return;
         }
 
-        if (ZombiesInReach().Count > 0)
+        if (HasZombieInReach())
         {
             ticksSinceStart = 0;
             PlayAnimation("attack");
@@ -136,40 +156,62 @@ public class NightshadeBehaviorController : CustomPlantBehaviorController
 
         foreach (var zombie in ZombiesInReach())
         {
-            zombie.TakeDamage(SlapDamage, DamageFlags.HitsShieldAndBody);
+            if (!zombie.IsDeadOrDying())
+            {
+                zombie.TakeDamage(SlapDamage, DamageFlags.HitsShieldAndBody);
+            }
         }
+    }
+
+    private void EnsureReach()
+    {
+        if (reachKnown)
+        {
+            return;
+        }
+
+        var plantRect = Plant.GetPlantRect();
+        float centerX = plantRect.x + plantRect.width / 2f;
+        reachLeft = centerX - ReachLeft;
+        reachRight = centerX + ReachRight;
+        reachKnown = true;
+    }
+
+    private bool HasZombieInReach()
+    {
+        if (Board == null)
+        {
+            return false;
+        }
+
+        EnsureReach();
+        int row = Plant.mRow;
+        foreach (var entry in ZombieSnapshot.Get(Board))
+        {
+            if (entry.Targetable && entry.Row == row && entry.Left < reachRight && entry.Right > reachLeft)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private List<Zombie> ZombiesInReach()
     {
         var result = new List<Zombie>();
-        if (Board?.m_zombies?.m_list == null)
+        if (Board == null)
         {
             return result;
         }
 
-        var plantRect = Plant.GetPlantRect();
-        float centerX = plantRect.x + plantRect.width / 2f;
-        float left = centerX - ReachLeft;
-        float right = centerX + ReachRight;
-
-        foreach (var entry in Board.m_zombies.m_list.ToList())
+        EnsureReach();
+        int row = Plant.mRow;
+        foreach (var entry in ZombieSnapshot.Get(Board))
         {
-            var zombie = entry.mItem;
-            if (zombie == null
-                || zombie.IsDeadOrDying()
-                || zombie.mMindControlled
-                || zombie.mRow != Plant.mRow
-                || zombie.mZombieType == ZombieType.Gravestone
-                || !zombie.EffectedByDamage(DamageRangeFlags.Ground))
+            if (entry.Targetable && entry.Row == row && entry.Left < reachRight && entry.Right > reachLeft)
             {
-                continue;
-            }
-
-            var zombieRect = zombie.GetZombieRect();
-            if (zombieRect.x < right && zombieRect.x + zombieRect.width > left)
-            {
-                result.Add(zombie);
+                result.Add(entry.Zombie);
             }
         }
 
@@ -181,6 +223,8 @@ public class NightshadeBehaviorController : CustomPlantBehaviorController
         base.Reset();
 
         ticksSinceStart = AttackClipTicks;
+        skinApplied = false;
+        reachKnown = false;
     }
 
     #endregion
