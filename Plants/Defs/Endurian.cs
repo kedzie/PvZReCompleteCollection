@@ -33,6 +33,9 @@ public class EndurianDefinition : CustomPlantDefinition
         // Nut: enemy Ladder Zombies place their ladder on it like on a Wall-nut (see CustomPlantDefinition.m_countsAsNut).
         m_countsAsNut = true;
 
+        // Wall-nut first aid: plant it again on a damaged one of its own kind to heal that one to full (see CustomPlantDefinition.m_healsOnReplant).
+        m_healsOnReplant = true;
+
         m_seedCost = 100;
         m_versusCost = 100;
         m_health = 3000;
@@ -149,7 +152,7 @@ public class EndurianBehaviorController : CustomPlantBehaviorController
         var touchRectLeft = new Rect(Plant.mX + TouchRectLeft.x, Plant.mY + TouchRectLeft.y, TouchRectLeft.width, TouchRectLeft.height);
         var touchRectRight = new Rect(Plant.mX + TouchRectRight.x, Plant.mY + TouchRectRight.y, TouchRectRight.width, TouchRectRight.height);
 
-        return Board.m_zombies.m_list.ToList()
+        return ZombieSnapshot.Items(Board)
             .Where(z => z.mItem != null
                         && (z.mItem.mRow == Plant.mRow || z.mItem.mZombieType == ZombieType.Boss)
                         && !z.mItem.IsDeadOrDying()

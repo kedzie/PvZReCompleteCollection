@@ -35,6 +35,9 @@ public class PrimalWallnutDefinition : CustomPlantDefinition
         // Nut: enemy Ladder Zombies place their ladder on it like on a Wall-nut (see CustomPlantDefinition.m_countsAsNut).
         m_countsAsNut = true;
 
+        // Wall-nut first aid: plant it again on a damaged one of its own kind to heal that one to full (see CustomPlantDefinition.m_healsOnReplant).
+        m_healsOnReplant = true;
+
         m_seedCost = 75;
         m_versusCost = 75;
         m_health = 4000;
