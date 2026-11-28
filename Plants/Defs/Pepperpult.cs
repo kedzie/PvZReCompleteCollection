@@ -135,11 +135,6 @@ public class PepperpultBehaviorController : CustomPlantBehaviorController
     // Nearest living zombie ahead of the plant in its lane.
     private Zombie FindTarget()
     {
-        return ShooterTarget.Compare(Plant, "Pepperpult", ScanForTarget());
-    }
-
-    private Zombie ScanForTarget()
-    {
         if (Board?.m_zombies?.m_list == null)
         {
             return null;

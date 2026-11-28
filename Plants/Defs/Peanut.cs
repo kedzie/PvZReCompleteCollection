@@ -204,11 +204,6 @@ public class PeanutBehaviorController : CustomPlantBehaviorController
     // Nearest living zombie ahead of the plant in its lane.
     private Zombie FindTarget()
     {
-        return ShooterTarget.Compare(Plant, "Peanut", ScanForTarget());
-    }
-
-    private Zombie ScanForTarget()
-    {
         return ZombieSnapshot.Items(Board)
             .Where(z => z.mItem != null
                         && !z.mItem.IsDeadOrDying()
