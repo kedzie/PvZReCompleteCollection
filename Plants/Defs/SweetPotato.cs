@@ -151,7 +151,7 @@ public class SweetPotatoBehaviorController : CustomPlantBehaviorController
         float left = board.GridToPixelX(Plant.mPlantCol, Plant.mRow);
         float right = left + AttractWidth;
 
-        foreach (var entry in board.m_zombies.m_list.ToList())
+        foreach (var entry in ZombieSnapshot.Items(board))
         {
             var zombie = entry.mItem;
             if (zombie == null

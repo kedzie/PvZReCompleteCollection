@@ -236,7 +236,7 @@ public class ChardGuardBehaviorController : CustomPlantBehaviorController
         float zoneLeft = centerX - left;
         float zoneRight = centerX + right;
 
-        foreach (var entry in Board.m_zombies.m_list.ToList())
+        foreach (var entry in ZombieSnapshot.Items(Board))
         {
             var zombie = entry.mItem;
             if (zombie == null

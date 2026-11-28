@@ -165,7 +165,7 @@ public class MegaGatlingBehaviorController : CustomPlantBehaviorController
             return null;
         }
 
-        return Board.m_zombies.m_list.ToList()
+        return ZombieSnapshot.Items(Board)
             .Where(z => z.mItem != null
                         && !z.mItem.IsDeadOrDying()
                         && (z.mItem.mRow == Plant.mRow || z.mItem.mZombieType == ZombieType.Boss)
@@ -282,8 +282,7 @@ public class MegaGatlingGiantPeaBehaviorController : CustomProjectileBehaviorCon
             return;
         }
 
-        var instance = UnityEngine.Object.Instantiate(customDef.HitEffectPrefab, theZombie.mController.gameObject.transform.position, Quaternion.identity);
-        UnityEngine.Object.Destroy(instance, 1f);
+        ZombieClipEffect.SpawnHit(theZombie, customDef.HitEffectPrefab, 1f);
     }
 
     #endregion

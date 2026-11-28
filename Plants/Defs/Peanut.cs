@@ -35,6 +35,9 @@ public class PeanutDefinition : CustomPlantDefinition
         // Nut: enemy Ladder Zombies place their ladder on it like on a Wall-nut (see CustomPlantDefinition.m_countsAsNut).
         m_countsAsNut = true;
 
+        // Wall-nut first aid: plant it again on a damaged one of its own kind to heal that one to full (see CustomPlantDefinition.m_healsOnReplant).
+        m_healsOnReplant = true;
+
         m_seedCost = 150;
         m_versusCost = 150;
         m_health = 4000;
@@ -201,7 +204,12 @@ public class PeanutBehaviorController : CustomPlantBehaviorController
     // Nearest living zombie ahead of the plant in its lane.
     private Zombie FindTarget()
     {
-        return Board.m_zombies.m_list.ToList()
+        return ShooterTarget.Compare(Plant, "Peanut", ScanForTarget());
+    }
+
+    private Zombie ScanForTarget()
+    {
+        return ZombieSnapshot.Items(Board)
             .Where(z => z.mItem != null
                         && !z.mItem.IsDeadOrDying()
                         && (z.mItem.mRow == Plant.mRow || z.mItem.mZombieType == ZombieType.Boss)

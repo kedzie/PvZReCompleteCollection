@@ -157,7 +157,7 @@ public class StunionBehaviorController : CustomPlantBehaviorController
         float left = plantRect.x - ReachLeft;
         float right = plantRect.x + plantRect.width + ReachRight;
 
-        foreach (var entry in Board.m_zombies.m_list.ToList())
+        foreach (var entry in ZombieSnapshot.Items(Board))
         {
             var zombie = entry.mItem;
             if (zombie == null

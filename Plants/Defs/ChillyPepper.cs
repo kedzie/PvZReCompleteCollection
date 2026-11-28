@@ -242,8 +242,7 @@ public class ChillyPepperBehaviorController : CustomPlantBehaviorController
         int plantColumn = Plant.mPlantCol;
         int plantPixelX = Board.GridToPixelX(plantColumn, row);
         int plantPixelY = Board.GridToPixelY(plantColumn, row);
-        iceSortingOrder = Il2CppReloaded.Utils.SortingUtils.RemapSortingLayers(
-            Board.MakeRenderOrder(RenderLayer.Ground, row, IceRenderOffset));
+        iceSortingOrder = EffectSorting.For(row, RenderLayer.Ground, IceRenderOffset);
 
         iceElapsed = 0f;
         for (int column = 0; column <= LastColumnIndex; column++)
@@ -297,7 +296,7 @@ public class ChillyPepperBehaviorController : CustomPlantBehaviorController
         var plantRect = Plant.GetPlantRect();
         float centerX = plantRect.x + plantRect.width / 2f;
 
-        foreach (var entry in Board.m_zombies.m_list.ToList())
+        foreach (var entry in ZombieSnapshot.Items(Board))
         {
             var zombie = entry.mItem;
             if (zombie == null

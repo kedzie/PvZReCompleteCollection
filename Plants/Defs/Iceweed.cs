@@ -158,7 +158,7 @@ public class IceweedBehaviorController : CustomPlantBehaviorController
         found.Clear();
         Rect plantRect = Plant.GetPlantRect();
 
-        foreach (var z in Board.m_zombies.m_list)
+        foreach (var z in ZombieSnapshot.Items(Board))
         {
             var zombie = z.mItem;
             if (zombie == null

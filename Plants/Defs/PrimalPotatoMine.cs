@@ -182,7 +182,7 @@ public class PrimalPotatoMineBehaviorController : CustomPlantBehaviorController
         float left = plantRect.x - TriggerPadding;
         float right = plantRect.x + plantRect.width + TriggerPadding;
 
-        foreach (var entry in Board.m_zombies.m_list.ToList())
+        foreach (var entry in ZombieSnapshot.Items(Board))
         {
             var zombie = entry.mItem;
             if (zombie == null
@@ -225,7 +225,7 @@ public class PrimalPotatoMineBehaviorController : CustomPlantBehaviorController
         float centerX = plantRect.x + plantRect.width / 2f;
         float centerY = plantRect.y + plantRect.height / 2f;
 
-        foreach (var entry in Board.m_zombies.m_list.ToList())
+        foreach (var entry in ZombieSnapshot.Items(Board))
         {
             var zombie = entry.mItem;
             if (zombie == null
@@ -258,8 +258,7 @@ public class PrimalPotatoMineBehaviorController : CustomPlantBehaviorController
 
     private void SpawnExplosionArt()
     {
-        int sortingOrder = Il2CppReloaded.Utils.SortingUtils.RemapSortingLayers(
-            Board.MakeRenderOrder(RenderLayer.Top, Plant.mRow, 0));
+        int sortingOrder = EffectSorting.For(Plant.mRow, RenderLayer.Top, 0);
         PlantEffectSpawner.SpawnAtPlant(PrimalPotatoMineDefinition.ExplosionPrefab, Plant,
             ExplosionDx, ExplosionDyDown, sortingOrder, ExplosionLifetimeSeconds);
     }

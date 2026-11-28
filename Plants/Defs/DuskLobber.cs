@@ -125,7 +125,12 @@ public class DuskLobberBehaviorController : CustomPlantBehaviorController
     // Nearest living zombie ahead of the plant in its lane.
     private Zombie FindTarget()
     {
-        return Board.m_zombies.m_list.ToList()
+        return ShooterTarget.Compare(Plant, "Dusk Lobber", ScanForTarget());
+    }
+
+    private Zombie ScanForTarget()
+    {
+        return ZombieSnapshot.Items(Board)
             .Where(z => z.mItem != null
                         && !z.mItem.IsDeadOrDying()
                         && (z.mItem.mRow == Plant.mRow || z.mItem.mZombieType == ZombieType.Boss)
@@ -218,7 +223,7 @@ public class DuskLobberProjectileBehaviorController : CustomProjectileBehaviorCo
             SpawnHitEffect(customDef, theZombie);
         }
 
-        foreach (var entry in Board.m_zombies.m_list.ToList())
+        foreach (var entry in ZombieSnapshot.Items(Board))
         {
             var zombie = entry.mItem;
             if (zombie == null || zombie == theZombie || zombie.IsDeadOrDying()
@@ -243,10 +248,9 @@ public class DuskLobberProjectileBehaviorController : CustomProjectileBehaviorCo
             return;
         }
 
-        var instance = UnityEngine.Object.Instantiate(customDef.HitEffectPrefab, theZombie.mController.gameObject.transform.position, Quaternion.identity);
-        // The splash clip is 43 frames = 1.43 s at 30 fps (it was 3.6 s at 12 fps and got cut after 1 s,
+                // The splash clip is 43 frames = 1.43 s at 30 fps (it was 3.6 s at 12 fps and got cut after 1 s,
         // i.e. after its first 12 frames); keep it alive long enough to play out.
-        UnityEngine.Object.Destroy(instance, 1.5f);
+        ZombieClipEffect.SpawnHit(theZombie, customDef.HitEffectPrefab, 1.5f);
     }
 
     #endregion

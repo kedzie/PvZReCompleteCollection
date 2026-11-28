@@ -380,7 +380,7 @@ public class TumbleweedProjectileBehaviorController : CustomProjectileBehaviorCo
     // hits it directly - this only looks for the extras beyond it.
     private List<Zombie> FindZombiesToHit(int row, float centerX, Zombie triggerZombie, int maxHits)
     {
-        return Board.m_zombies.m_list.ToList()
+        return ZombieSnapshot.Items(Board)
             .Where(z => z.mItem != null
                         && z.mItem != triggerZombie
                         && z.mItem.mRow == row
@@ -421,8 +421,7 @@ public class TumbleweedProjectileBehaviorController : CustomProjectileBehaviorCo
             return;
         }
 
-        var instance = UnityEngine.Object.Instantiate(customDef.HitEffectPrefab, theZombie.mController.gameObject.transform.position, Quaternion.identity);
-        UnityEngine.Object.Destroy(instance, 1f);
+        ZombieClipEffect.SpawnHit(theZombie, customDef.HitEffectPrefab, 1f);
     }
 
     #endregion

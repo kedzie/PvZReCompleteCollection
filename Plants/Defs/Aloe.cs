@@ -180,8 +180,7 @@ public class AloeBehaviorController : CustomPlantBehaviorController
             if (haveAnchor && prefab != null && plant.mController != null)
             {
                 var anchor = plant.mController.gameObject.transform.position + anchorOffset;
-                int sortingOrder = Il2CppReloaded.Utils.SortingUtils.RemapSortingLayers(
-                    Board.MakeRenderOrder(RenderLayer.Particle, plant.mRow, 1));
+                int sortingOrder = EffectSorting.For(plant.mRow);
                 PlantEffectSpawner.Spawn(prefab, anchor, unit, HealDx, HealDyDown, sortingOrder, HealLifetimeSeconds);
             }
         }

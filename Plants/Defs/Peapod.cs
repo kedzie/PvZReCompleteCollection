@@ -193,7 +193,7 @@ public class PeapodBehaviorController : CustomPlantBehaviorController
     // Nearest living zombie ahead of the plant in its lane.
     private Zombie FindTarget()
     {
-        return Board.m_zombies.m_list.ToList()
+        return ZombieSnapshot.Items(Board)
             .Where(z => z.mItem != null
                         && !z.mItem.IsDeadOrDying()
                         && (z.mItem.mRow == Plant.mRow || z.mItem.mZombieType == ZombieType.Boss)

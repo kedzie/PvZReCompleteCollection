@@ -112,11 +112,6 @@ public class BambooSpartanBehaviorController : CustomPlantBehaviorController
     {
         base.OnLaunchCounterTriggered();
 
-        var zombies = Board.m_zombies.m_list.ToList();
-        zombies.RemoveAll(z => z.mItem == null);
-        zombies.RemoveAll(z => z.mItem.mRow != Plant.mRow && z.mItem.mZombieType != ZombieType.Boss);
-        zombies.RemoveAll(z => z.mItem.IsDeadOrDying());
-        zombies.RemoveAll(z => !z.mItem.EffectedByDamage(DamageRangeFlags.Ground));
         // Real trigger rect is {mX:10, mY:-50, mWidth:150, mHeight:60} -
         // forward-only (positive = toward zombies), matching his real jab:
         // he only ever attacks ahead of him, never behind, unlike Bonkchoy's
@@ -132,15 +127,29 @@ public class BambooSpartanBehaviorController : CustomPlantBehaviorController
         // without the -8f/-40f tolerance hacks an earlier point-check needed -
         // the rect overlap already accounts for the zombie's own width.
         var triggerRect = new Rect(Plant.mX + 10f, Plant.mY - 50f, 150f, 60f);
-        zombies.RemoveAll(z => !triggerRect.Overlaps(z.mItem.GetZombieRect()));
 
-        if (!zombies.Any())
+        // One pass over the shared zombie list (cheap tests first); the target is the nearest zombie in reach.
+        Zombie target = null;
+        foreach (var entry in ZombieSnapshot.Items(Board))
+        {
+            var zombie = entry.mItem;
+            if (zombie == null
+                || (zombie.mRow != Plant.mRow && zombie.mZombieType != ZombieType.Boss)
+                || (target != null && zombie.mPosX >= target.mPosX)
+                || zombie.IsDeadOrDying()
+                || !zombie.EffectedByDamage(DamageRangeFlags.Ground)
+                || !triggerRect.Overlaps(zombie.GetZombieRect()))
+            {
+                continue;
+            }
+
+            target = zombie;
+        }
+
+        if (target == null)
         {
             return;
         }
-
-        zombies.Sort((a, b) => a.mItem.mPosX.CompareTo(b.mItem.mPosX));
-        var target = zombies.First().mItem;
 
         // Reads live health directly rather than a separately-tracked bool,
         // so damage/animation choice can never drift out of sync with it.

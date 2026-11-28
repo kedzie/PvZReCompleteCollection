@@ -194,7 +194,7 @@ public class SnapdragonBehaviorController : CustomPlantBehaviorController
     // the strip [left, right].
     private void BurnZone(float left, float right)
     {
-        foreach (var entry in Board.m_zombies.m_list.ToList())
+        foreach (var entry in ZombieSnapshot.Items(Board))
         {
             var zombie = entry.mItem;
             if (zombie == null
@@ -233,7 +233,7 @@ public class SnapdragonBehaviorController : CustomPlantBehaviorController
         var plantRect = Plant.GetPlantRect();
         float centerX = plantRect.x + plantRect.width / 2f;
 
-        foreach (var entry in Board.m_zombies.m_list.ToList())
+        foreach (var entry in ZombieSnapshot.Items(Board))
         {
             var zombie = entry.mItem;
             if (zombie == null
@@ -290,8 +290,7 @@ public class SnapdragonBehaviorController : CustomPlantBehaviorController
 
             // Y grows downward on the board and upward in the world, hence the minus.
             float laneShift = -(Board.GridToPixelY(column, row) - Board.GridToPixelY(column, plantRow)) * worldPerPixel;
-            int sortingOrder = Il2CppReloaded.Utils.SortingUtils.RemapSortingLayers(
-                Board.MakeRenderOrder(RenderLayer.Particle, row, 1));
+            int sortingOrder = EffectSorting.For(row);
 
             PlantEffectSpawner.Spawn(prefab, anchor + new Vector3(0f, laneShift, 0f), unit,
                 FireDx, FireDyDown, sortingOrder, FireLifetimeSeconds);

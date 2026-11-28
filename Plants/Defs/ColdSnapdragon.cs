@@ -188,7 +188,7 @@ public class ColdSnapdragonBehaviorController : CustomPlantBehaviorController
     // to every live ground zombie of the plant's lane and the lanes next to it whose body overlaps the strip [left, right].
     private void FrostZone(float left, float right)
     {
-        foreach (var entry in Board.m_zombies.m_list.ToList())
+        foreach (var entry in ZombieSnapshot.Items(Board))
         {
             var zombie = entry.mItem;
             if (zombie == null
@@ -225,7 +225,7 @@ public class ColdSnapdragonBehaviorController : CustomPlantBehaviorController
         var plantRect = Plant.GetPlantRect();
         float centerX = plantRect.x + plantRect.width / 2f;
 
-        foreach (var entry in Board.m_zombies.m_list.ToList())
+        foreach (var entry in ZombieSnapshot.Items(Board))
         {
             var zombie = entry.mItem;
             if (zombie == null
@@ -282,8 +282,7 @@ public class ColdSnapdragonBehaviorController : CustomPlantBehaviorController
             // Y grows downward on the board and upward in the world, hence the minus; X is the tile ahead's distance.
             float laneShift = -(Board.GridToPixelY(column, row) - Board.GridToPixelY(column, plantRow)) * worldPerPixel;
             float tileShift = tilesAhead * TileWidth * worldPerPixel;
-            int sortingOrder = Il2CppReloaded.Utils.SortingUtils.RemapSortingLayers(
-                Board.MakeRenderOrder(RenderLayer.Particle, row, 1));
+            int sortingOrder = EffectSorting.For(row);
 
             PlantEffectSpawner.Spawn(prefab, anchor + new Vector3(tileShift, laneShift, 0f), unit,
                 IceDx, IceDyDown, sortingOrder, IceLifetimeSeconds);

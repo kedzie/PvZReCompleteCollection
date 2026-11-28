@@ -286,7 +286,7 @@ public class SpringBeanBehaviorController : CustomPlantBehaviorController
         float left = plantRect.x - leftPadding;
         float right = plantRect.x + plantRect.width + rightPadding;
 
-        foreach (var entry in Board.m_zombies.m_list.ToList())
+        foreach (var entry in ZombieSnapshot.Items(Board))
         {
             var zombie = entry.mItem;
             if (zombie == null

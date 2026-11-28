@@ -135,12 +135,17 @@ public class PepperpultBehaviorController : CustomPlantBehaviorController
     // Nearest living zombie ahead of the plant in its lane.
     private Zombie FindTarget()
     {
+        return ShooterTarget.Compare(Plant, "Pepperpult", ScanForTarget());
+    }
+
+    private Zombie ScanForTarget()
+    {
         if (Board?.m_zombies?.m_list == null)
         {
             return null;
         }
 
-        return Board.m_zombies.m_list.ToList()
+        return ZombieSnapshot.Items(Board)
             .Where(z => z.mItem != null
                         && !z.mItem.IsDeadOrDying()
                         && (z.mItem.mRow == Plant.mRow || z.mItem.mZombieType == ZombieType.Boss)
@@ -232,7 +237,7 @@ public class PepperpultProjectileBehaviorController : CustomProjectileBehaviorCo
             SpawnHitEffect(customDef, theZombie);
         }
 
-        foreach (var entry in Board.m_zombies.m_list.ToList())
+        foreach (var entry in ZombieSnapshot.Items(Board))
         {
             var zombie = entry.mItem;
             if (zombie == null || zombie == theZombie || zombie.IsDeadOrDying()
@@ -257,9 +262,8 @@ public class PepperpultProjectileBehaviorController : CustomProjectileBehaviorCo
             return;
         }
 
-        var instance = UnityEngine.Object.Instantiate(customDef.HitEffectPrefab, theZombie.mController.gameObject.transform.position, Quaternion.identity);
-        // The splat clip is 38 frames = 1.27 s at 30 fps; keep it alive long enough to play out.
-        UnityEngine.Object.Destroy(instance, 1.5f);
+                // The splat clip is 38 frames = 1.27 s at 30 fps; keep it alive long enough to play out.
+        ZombieClipEffect.SpawnHit(theZombie, customDef.HitEffectPrefab, 1.5f);
     }
 
     #endregion

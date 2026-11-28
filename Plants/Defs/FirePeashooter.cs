@@ -165,14 +165,21 @@ public class FirePeashooterBehaviorController : CustomPlantBehaviorController
     // First living zombie ahead of the plant in its lane (or any Boss), same filter the plant always used.
     private Zombie FindTarget()
     {
-        var zombies = Board.m_zombies.m_list.ToList();
-        zombies.RemoveAll(z => z.mItem == null);
-        zombies.RemoveAll(z => z.mItem.IsDeadOrDying());
-        zombies.RemoveAll(z => z.mItem.mRow != Plant.mRow && z.mItem.mZombieType != ZombieType.Boss);
-        zombies.RemoveAll(z => !z.mItem.EffectedByDamage(DamageRangeFlags.Ground));
-        zombies.RemoveAll(z => z.mItem.mPosX <= Plant.mX);
+        // One pass over the shared zombie list, the cheap tests first, stopping at the first match.
+        foreach (var entry in ZombieSnapshot.Items(Board))
+        {
+            var zombie = entry.mItem;
+            if (zombie != null
+                && zombie.mPosX > Plant.mX
+                && (zombie.mRow == Plant.mRow || zombie.mZombieType == ZombieType.Boss)
+                && !zombie.IsDeadOrDying()
+                && zombie.EffectedByDamage(DamageRangeFlags.Ground))
+            {
+                return zombie;
+            }
+        }
 
-        return zombies.Any() ? zombies.First().mItem : null;
+        return null;
     }
 
     // Dr. Zomboss' rolling ice ball is not a projectile: the boss Zombie itself holds it
