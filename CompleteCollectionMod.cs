@@ -48,6 +48,9 @@ public class CompleteCollectionMod : MelonMod
     public static string StunionBundleId = "PvZCC_StunionAssets";
     public static string SourshotBundleId = "PvZCC_SourshotAssets";
     public static string PepperpultBundleId = "PvZCC_PepperpultAssets";
+    public static string PVineBundleId = "PvZCC_PVineAssets";
+    public static string ElectricPeashooterBundleId = "PvZCC_ElectricPeashooterAssets";
+    public static string SnapPeaBundleId = "PvZCC_SnapPeaAssets";
 
     #endregion
 
@@ -97,6 +100,9 @@ public class CompleteCollectionMod : MelonMod
             RegistryBridge.RegisterAssetBundle(StunionBundleId, "Mods/CompleteCollection/pvzstunionbundle");
             RegistryBridge.RegisterAssetBundle(SourshotBundleId, "Mods/CompleteCollection/pvzsourshotbundle");
             RegistryBridge.RegisterAssetBundle(PepperpultBundleId, "Mods/CompleteCollection/pvzpepperpultbundle");
+            RegistryBridge.RegisterAssetBundle(PVineBundleId, "Mods/CompleteCollection/pvzpvinebundle");
+            RegistryBridge.RegisterAssetBundle(ElectricPeashooterBundleId, "Mods/CompleteCollection/pvzelectric_peashooterbundle");
+            RegistryBridge.RegisterAssetBundle(SnapPeaBundleId, "Mods/CompleteCollection/pvzsnappeabundle");
 
         };
         
@@ -154,6 +160,13 @@ public class CompleteCollectionMod : MelonMod
             CustomContentRegistry.RegisterCustomPlant(ScriptableObject.CreateInstance<SourshotDefinition>());
             CustomContentRegistry.RegisterCustomProjectile(ScriptableObject.CreateInstance<PepperpultProjectileDefinition>());
             CustomContentRegistry.RegisterCustomPlant(ScriptableObject.CreateInstance<PepperpultDefinition>());
+            CustomContentRegistry.RegisterCustomProjectile(ScriptableObject.CreateInstance<PVineProjectileDefinition>());
+            CustomContentRegistry.RegisterCustomPlant(ScriptableObject.CreateInstance<PVineDefinition>());
+            CustomContentRegistry.RegisterCustomProjectile(ScriptableObject.CreateInstance<ElectricPeaProjectileDefinition>());
+            CustomContentRegistry.RegisterCustomPlant(ScriptableObject.CreateInstance<ElectricPeashooterDefinition>());
+            CustomContentRegistry.RegisterCustomProjectile(ScriptableObject.CreateInstance<SnapPeaHeadProjectileDefinition>());
+            CustomContentRegistry.RegisterCustomProjectile(ScriptableObject.CreateInstance<SnapPeaPeaProjectileDefinition>());
+            CustomContentRegistry.RegisterCustomPlant(ScriptableObject.CreateInstance<SnapPeaDefinition>());
 
             ZombieCards.RegisterAll();
         };
